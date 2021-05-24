@@ -1,0 +1,52 @@
+{
+  "name": "rabscuttle",
+  "version": "1.0.0",
+  "description": "A discord bot written in typescript",
+  "main": "src/index.ts",
+  "devDependencies": {
+    "@types/form-data": "^2.5.0",
+    "@types/formdata": "^0.10.0",
+    "@types/jimp": "^0.2.28",
+    "@types/node": "^14.11.2",
+    "@types/node-fetch": "^2.5.10",
+    "@types/ws": "^7.4.4",
+    "gts": "^3.1.0",
+    "nodemon": "^2.0.2",
+    "prettier": "^2.0.2",
+    "pretty-quick": "^2.0.1",
+    "ts-node": "^10.0.0",
+    "tslint": "^6.1.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^4.2.0"
+  },
+  "nodemonConfig": {
+    "exec": "ts-node src/index.ts",
+    "env": {
+      "NODE_ENV": "development"
+    },
+    "ext": "ts",
+    "watch": [
+      "src"
+    ]
+  },
+  "scripts": {
+    "develop": "nodemon",
+    "build": "tsc",
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix",
+    "prepare": "npm.cmd run compile",
+    "pretest": "npm.cmd run compile",
+    "posttest": "npm.cmd run lint"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "git+https://github.com/discordjs/discord.js.git#b376f31af9881b9cd3f82ac4a42a468947cce482",
+    "form-data": "^3.0.1",
+    "jimp": "^0.16.1",
+    "jsmegahal": "^1.2.4",
+    "node-fetch": "^2.6.1"
+  }
+}
