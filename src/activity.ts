@@ -27,5 +27,4 @@ export const enableActivitySelector = async (
 ) => {
   await new Promise(resolve => setTimeout(resolve, 2000));
   setInterval(setStatus, rotationTimeInMs, user, statusCollection);
-  setStatus(user, statusCollection);
 };
