@@ -343,7 +343,7 @@ const saveRanking = async (data: string[], date: Date) => {
   const timestamp = date.getTime() / 1000;
   const beginOfDay = timestamp - (timestamp % 86400);
   await writeFile(
-    `data/ranking-${beginOfDay}.json`,
+    `data/rankings/ranking-${beginOfDay}.json`,
     JSON.stringify(data),
     {encoding: 'utf-8', flag: 'w'},
     () => {}
@@ -356,7 +356,7 @@ const loadRanking = async (
 ) => {
   const timestamp = date.getTime() / 1000;
   const beginOfDay = timestamp - (timestamp % 86400);
-  const filePath = `data/ranking-${beginOfDay}.json`;
+  const filePath = `data/rankings/ranking-${beginOfDay}.json`;
   if (!existsSync(filePath)) {
     callback(null, []);
   }

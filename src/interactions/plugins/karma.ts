@@ -17,6 +17,8 @@ export interface UserStatistic {
   score: number;
 }
 
+type DataNames = 'report' | 'commend';
+
 const getScore = (dataSet: VoteRecords, username: string) =>
   dataSet[username.toLowerCase()] || 0;
 const addScore = (dataSet: VoteRecords, username: string) =>
@@ -32,7 +34,7 @@ const commit = (dataset: VoteRecords, name: string) => {
 
 const commends: VoteRecords = {};
 const reports: VoteRecords = {};
-const load = (command: 'report' | 'commend', targetObject: VoteRecords) => {
+const load = (command: DataNames, targetObject: VoteRecords) => {
   readFile(`./data/${command}.json`, (err, data) => {
     if (err) {
       console.error(`Could not load ${command}.json`);
@@ -57,7 +59,7 @@ const userStatistics = (username: string): UserStatistic => {
   };
 };
 
-const buildCommand = (dataset: VoteRecords, datasetName: string) => {
+const buildCommand = (dataset: VoteRecords, datasetName: DataNames) => {
   return (username: string) => {
     addScore(dataset, username);
     commit(dataset, datasetName);
@@ -65,18 +67,15 @@ const buildCommand = (dataset: VoteRecords, datasetName: string) => {
   };
 };
 
-const commend = buildCommand(commends, 'commends');
-const report = buildCommand(reports, 'reports');
+const commend = buildCommand(commends, 'commend');
+const report = buildCommand(reports, 'report');
 type ActionNames = typeof TRIGGER_WORDS[number];
 const actions = {
   report: report,
   commend: commend,
 } as const;
 
-const generateCommandRepsonse = (
-  command: 'report' | 'commend',
-  username: string
-) => {
+const generateCommandRepsonse = (command: DataNames, username: string) => {
   const stats = actions[command](username);
   return (
     'Thank you for helping to improve the Dota 2 Community.\n' +

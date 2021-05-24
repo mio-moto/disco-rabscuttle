@@ -1,5 +1,5 @@
-import {ActivityType} from 'discord.js';
 import {readFileSync} from 'fs';
+import {ClientStatus} from '../activity';
 
 export interface UploadConfig {
   formField: string;
@@ -10,9 +10,7 @@ export interface UploadConfig {
 
 export interface Config {
   token: string;
-  username: string;
-  statusText: string;
-  statusType: ActivityType;
+  status: ClientStatus[];
   brainFile: string;
   userId?: string;
   steamApiKey: string;
@@ -24,4 +22,4 @@ function loadConfig(path: string): Config {
   return JSON.parse(readFileSync(path, 'utf-8')) as Config;
 }
 
-export default () => loadConfig('data/configFile.json');
+export default () => loadConfig('data/config.json');

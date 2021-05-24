@@ -2,6 +2,7 @@ import {Client, Intents} from 'discord.js';
 import Robot from './message';
 import loadConfig from './config';
 import bindInteractions from './interactions';
+import {enableActivitySelector} from './activity';
 
 (async () => {
   const client = new Client({
@@ -24,6 +25,7 @@ import bindInteractions from './interactions';
 
   console.log('Loggin in...');
   await client.login(config.token);
-  client.user?.setUsername(config.username);
-  client.user?.setActivity(config.statusText, {type: config.statusType});
+  if (client.user) {
+    enableActivitySelector(client.user, config.status);
+  }
 })();
