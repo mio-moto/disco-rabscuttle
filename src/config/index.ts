@@ -11,6 +11,7 @@ export interface UploadConfig {
 export interface Config {
   token: string;
   status: ClientStatus[];
+  usernames: string[];
   brainFile: string;
   userId?: string;
   steamApiKey: string;

@@ -1,10 +1,13 @@
 import {Interaction, Message as DiscordMessage} from 'discord.js';
 import {Config} from '../config';
+import {loggerFactory} from '../logging';
 import {InteractionPlugin, MessagePlugin} from './hooks';
 
 export interface MessageCallback {
   (message: DiscordMessage): void;
 }
+const logger = loggerFactory('Plugins');
+
 const plugins: {
   interactions: {
     [command: string]: InteractionPlugin;
@@ -65,5 +68,9 @@ export function onNewInteraction(interaction: Interaction) {
   if (!(interaction.commandName in plugins.interactions)) {
     return;
   }
-  plugins.interactions[interaction.commandName].onNewInteraction(interaction);
+  try {
+    plugins.interactions[interaction.commandName].onNewInteraction(interaction);
+  } catch (e) {
+    logger.error(e);
+  }
 }

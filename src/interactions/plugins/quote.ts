@@ -2,6 +2,9 @@ import {Client, CommandInteraction} from 'discord.js';
 import {readFile, writeFile} from 'fs';
 import {InteractionPlugin} from '../../message/hooks';
 import {Config} from '../../config';
+import {Logger} from 'winston';
+
+let logger: Logger;
 
 interface Quote {
   0: number;
@@ -32,12 +35,12 @@ const months = [
 const load = () => {
   readFile('./data/quotes.json', (err, data) => {
     if (err) {
-      console.error("Could not populate 'data/quote.json'");
+      logger.error("Could not populate 'data/quote.json'");
       return;
     }
 
     quotes.push(...(JSON.parse(data.toString()) as Records));
-    console.log(`Populated quote dataset (${quotes.length} entries).`);
+    logger.info(`Populated quote dataset (${quotes.length} entries).`);
   });
 };
 
@@ -89,7 +92,7 @@ const runtime = {
     quotes.push(newQuote);
     writeFile('./data/quotes.json', JSON.stringify(quotes), err => {
       if (err) {
-        console.error(`Could not write 'data/quotes.json':\n${err}`);
+        logger.error(`Could not write 'data/quotes.json':\n${err}`);
       }
     });
     return `${author}s quote has been added, its index is ${newQuoteIndex + 1}`;
@@ -139,7 +142,8 @@ const plugin: InteractionPlugin = {
     ],
   },
 
-  onInit: (_: Client, __: Config) => {
+  onInit: (_: Client, __: Config, log: Logger) => {
+    logger = log;
     load();
   },
   onNewInteraction: (interaction: CommandInteraction) => {

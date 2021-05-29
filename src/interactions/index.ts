@@ -13,6 +13,7 @@ import {
   KarmaInteraction,
   ReportInteraction,
 } from './plugins/karma';
+import {loggerFactory} from '../logging';
 
 const interactions = [
   Bark,
@@ -33,7 +34,9 @@ export default function bindInteractions(client: Client, config: Config) {
     });
     Robot.register(x);
     if (x.onInit) {
-      x.onInit(client, config);
+      const logger = loggerFactory(x.descriptor.name);
+      x.onInit(client, config, logger);
+      logger.info(`${x.descriptor.name} initialized`);
     }
   });
 }

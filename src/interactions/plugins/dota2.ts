@@ -1,29 +1,32 @@
 import {Client, CommandInteraction, MessageEmbed} from 'discord.js';
 import {existsSync, readFile, writeFile} from 'fs';
 import fetch from 'node-fetch';
+import {URLSearchParams} from 'url';
+import {Logger} from 'winston';
 import {Config} from '../../config';
 import {InteractionPlugin} from '../../message/hooks';
 import interactionError from './utils/interaction-error';
 import {decimal} from './utils/number-fomatter';
 
+let logger: Logger;
+
 // searches the workshop, orders by name
 const SEARCH_URL =
-  'https://api.steampowered.com/IPublishedFileService/QueryFiles/v1/?key={key}&query_type=12&page=0&numperpage=10&appid=570&search_text={text}';
+  'https://api.steampowered.com/IPublishedFileService/QueryFiles/v1/?';
 // gives extensive details of an item
 const WORKSHOP_DETAILS =
-  'https://api.steampowered.com/IPublishedFileService/GetDetails/v1/?key={key}&publishedfileids[0]={custom_game_id}&includetags=1&includeadditionalpreviews=1&includechildren=1&includekvtags=1&includevotes=1&short_description=1&includeforsaledata=1&includemetadata=1&return_playtime_stats=1&appid=570&strip_description_bbcode=1';
+  'https://api.steampowered.com/IPublishedFileService/GetDetails/v1/?';
 // returns all currently open lobbies
 const OPEN_LOBBY =
   'http://www.dota2.com/webapi/ILobbies/GetJoinableCustomLobbies/v0001';
 // gets player / spectator cound of a game
 const PLAYER_COUNT =
-  'https://www.dota2.com/webapi/ICustomGames/GetGamePlayerCounts/v0001/?custom_game_id={custom_game_id}';
+  'https://www.dota2.com/webapi/ICustomGames/GetGamePlayerCounts/v0001/?';
 // gets lots of ids of popular games
 const POPULAR_GAMES =
   'https://www.dota2.com/webapi/ICustomGames/GetPopularGames/v0001/';
 
-const WORKSHOP_SITE =
-  'https://steamcommunity.com/sharedfiles/filedetails/?id={custom_game_id}';
+const WORKSHOP_SITE = 'https://steamcommunity.com/sharedfiles/filedetails/?';
 
 type SearchResponse = {
   response: {
@@ -151,21 +154,39 @@ const gatherLobbyStats = (
   ];
 };
 
-const addKey = (uri: string, key: string) => uri.replace('{key}', key);
-const addText = (uri: string, text: string) => uri.replace('{text}', text);
-const addCustomGameId = (uri: string, customGameId: string) =>
-  uri.replace('{custom_game_id}', customGameId);
-
 const getSearchUrl = (key: string, text: string) =>
-  addText(addKey(SEARCH_URL, key), text);
+  SEARCH_URL +
+  new URLSearchParams({
+    key: key,
+    search_text: text,
+    query_type: '12',
+    page: '0',
+    numberpage: '10',
+    appid: '570',
+  });
 const getWorkshopDetailsUri = (key: string, customGameId: string) =>
-  addCustomGameId(addKey(WORKSHOP_DETAILS, key), customGameId);
+  WORKSHOP_DETAILS +
+  new URLSearchParams({
+    key: key,
+    'publishedfileids[0]': customGameId,
+    includetags: '1',
+    includeadditionalprevies: '1',
+    includechildren: '1',
+    includekvtags: '1',
+    includevotes: '1',
+    short_description: '1',
+    includeforsaledata: '1',
+    includemetadata: '1',
+    return_playtime_stats: '1',
+    appid: '570',
+    strip_description_bbcode: '1',
+  });
 const getOpenLobbyUri = () => OPEN_LOBBY;
 const getPlayerCountUri = (customGameId: string) =>
-  addCustomGameId(PLAYER_COUNT, customGameId);
+  PLAYER_COUNT + new URLSearchParams({custom_game_id: customGameId});
 const getPopularGamesUri = () => POPULAR_GAMES;
 const getWorkshopSiteUri = (customGameId: string) =>
-  addCustomGameId(WORKSHOP_SITE, customGameId);
+  WORKSHOP_SITE + new URLSearchParams({id: customGameId});
 
 let steamApiKey = '';
 
@@ -175,6 +196,7 @@ const strategy = {
 
     const searchRequest = await fetch(getSearchUrl(steamApiKey, name));
     if (!searchRequest.ok) {
+      logger.error(searchRequest);
       interactionError(interaction, 'Sorry, I cannot reach Valve.');
       return;
     }
@@ -197,7 +219,7 @@ const strategy = {
     );
 
     if (!detailsRequest.ok) {
-      console.error(detailsRequest);
+      logger.error(detailsRequest);
       interactionError(interaction, "Sorry, I couldn't reach valve.");
       return;
     }
@@ -221,6 +243,7 @@ const strategy = {
 
     const playerCountRequest = await playerCountRequestPromise;
     if (!playerCountRequest.ok) {
+      logger.error(playerCountRequest);
       interactionError(
         interaction,
         "Sorry, I couldn't fetch the player count."
@@ -235,6 +258,7 @@ const strategy = {
 
     const playerLobbyRequest = await playerLobbyRequestPromise;
     if (!playerLobbyRequest.ok) {
+      logger.error(playerLobbyRequest);
       interactionError(interaction, "Sorry, I couldn't fetch lobby data.");
       return;
     }
@@ -384,31 +408,33 @@ const plugin: InteractionPlugin = {
       },
     ],
   },
-  onInit(client: Client, config: Config) {
+  onInit(client: Client, config: Config, log: Logger) {
+    logger = log;
+    steamApiKey = config.steamApiKey;
     const yesterday = new Date();
     yesterday.setDate(new Date().getDate() - 1);
     loadRanking(yesterday, (err, data) => {
       if (err) {
         return;
       }
-      yesterdayPopularGames = data;
-    });
+      yesterdayPopularGames = currentPopularGames = data;
 
-    const updateRanking = async () => {
-      const popularGamesRequest = await fetch(getPopularGamesUri());
-      if (!popularGamesRequest.ok) {
-        setTimeout(updateRanking, 30000);
-        return;
-      }
-      const response: PopularGamesResponse = JSON.parse(
-        await popularGamesRequest.text()
-      );
-      currentPopularGames = response.result.custom_games.map(x => x.id);
-      saveRanking(currentPopularGames, new Date());
-    };
-    updateRanking();
-    setInterval(updateRanking, 86400000 / 4);
-    steamApiKey = config.steamApiKey;
+      const updateRanking = async () => {
+        const popularGamesRequest = await fetch(getPopularGamesUri());
+        if (!popularGamesRequest.ok) {
+          setTimeout(updateRanking, 30000);
+          return;
+        }
+        const response: PopularGamesResponse = JSON.parse(
+          await popularGamesRequest.text()
+        );
+        yesterdayPopularGames = currentPopularGames;
+        currentPopularGames = response.result.custom_games.map(x => x.id);
+        saveRanking(currentPopularGames, new Date());
+      };
+      updateRanking();
+      setInterval(updateRanking, 86400000);
+    });
   },
   onNewInteraction(interaction: CommandInteraction) {
     if (

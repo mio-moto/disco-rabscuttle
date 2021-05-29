@@ -3,6 +3,7 @@ import Robot from './message';
 import loadConfig from './config';
 import bindInteractions from './interactions';
 import {enableActivitySelector} from './activity';
+import logger from './logging';
 
 (async () => {
   const client = new Client({
@@ -15,7 +16,7 @@ import {enableActivitySelector} from './activity';
   const config = loadConfig();
 
   client.on('ready', () => {
-    console.log(`Logged in as ${client?.user?.tag} - ID: ${client?.user?.id}`);
+    logger.info(`Logged in as ${client?.user?.tag} - ID: ${client?.user?.id}`);
     config.userId = client?.user?.id ?? '';
     Robot.setup(config);
     bindInteractions(client, config);
@@ -23,9 +24,9 @@ import {enableActivitySelector} from './activity';
     client.on('interaction', Robot.onNewInteraction);
   });
 
-  console.log('Loggin in...');
+  logger.info('Loggin in...');
   await client.login(config.token);
   if (client.user) {
-    enableActivitySelector(client.user, config.status);
+    enableActivitySelector(client.user, config.status, config.usernames);
   }
 })();

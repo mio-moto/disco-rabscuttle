@@ -4,6 +4,7 @@ import fetch from 'node-fetch';
 import {InteractionPlugin} from '../../message/hooks';
 import interactionError from './utils/interaction-error';
 import {OHLCDataPoint, rasterize, uploadImage} from './imaging';
+import {Logger} from 'winston';
 
 type OHLCData = [
   CloseTime: number,
@@ -264,9 +265,9 @@ const plugin: InteractionPlugin = {
       },
     ],
   },
-  onInit(_: Client, config: Config) {
+  onInit(_: Client, config: Config, logger: Logger) {
     uploadConfig = config.uploadConfig;
-    console.log('Cryptowatch initialized');
+    logger.info('Cryptowatch initialized');
   },
   onNewInteraction(interaction: CommandInteraction) {
     if (interaction.options[0] === undefined) {

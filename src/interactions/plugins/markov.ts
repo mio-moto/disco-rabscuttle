@@ -2,7 +2,9 @@ import {Client, CommandInteraction, Message} from 'discord.js';
 import {createWriteStream, readFile, WriteStream} from 'fs';
 import {InteractionPlugin, MessagePlugin} from '../../message/hooks';
 import loadConfig, {Config} from '../../config';
+import {Logger} from 'winston';
 
+let logger: Logger;
 const jsmegahal = require('jsmegahal');
 const brain = new jsmegahal(2);
 
@@ -17,7 +19,7 @@ function chunk(arr: Array<string>, chunkSize: number) {
 const loadBrain = (brainFile: string, onFinished: () => void) => {
   readFile(brainFile, {encoding: 'utf-8'}, async (err, data) => {
     if (err) {
-      console.log(err);
+      logger.error(err);
       return;
     }
 
@@ -28,7 +30,7 @@ const loadBrain = (brainFile: string, onFinished: () => void) => {
       await new Promise(r => setTimeout(r, 10));
     }
 
-    console.log(`Markov Brain tokenized ${lines.length} lines`);
+    logger.info(`Markov Brain tokenized ${lines.length} lines`);
     onFinished();
   });
 };
@@ -65,7 +67,8 @@ const plugin: InteractionPlugin & MessagePlugin & Preload = {
   preloadTexts: [] as string[],
   loaded: false,
 
-  async onInit(client: Client, config: Config) {
+  async onInit(client: Client, config: Config, log: Logger) {
+    logger = log;
     loadBrain(loadConfig().brainFile, () => {
       this.loaded = true;
     });

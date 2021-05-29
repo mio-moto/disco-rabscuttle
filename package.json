@@ -43,10 +43,12 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "discord.js": "git+https://github.com/discordjs/discord.js.git#b376f31af9881b9cd3f82ac4a42a468947cce482",
+    "discord-api-types": "^0.18.1",
+    "discord.js": "git+https://github.com/discordjs/discord.js.git#e300518597955abf4bf3c3d2634b47b9b3964274",
     "form-data": "^3.0.1",
     "jimp": "^0.16.1",
     "jsmegahal": "^1.2.4",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^2.6.1",
+    "winston": "^3.3.3"
   }
 }

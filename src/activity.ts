@@ -3,28 +3,28 @@ import {ActivityType, ClientUser} from 'discord.js';
 export type ClientStatus = {
   statusText: string;
   statusType?: ActivityType;
-  username: string;
 };
 
-const setStatus = (user: ClientUser, statusCollection: ClientStatus[]) => {
-  const status =
-    statusCollection[Math.floor(Math.random() * statusCollection.length)];
+const random = (stuff: any[]) =>
+  stuff[Math.floor(Math.random() * stuff.length)];
+
+const setStatus = (
+  user: ClientUser,
+  statusCollection: ClientStatus[],
+  usernames: string[]
+) => {
+  const status = random(statusCollection);
+  const username = random(usernames);
   user.setActivity(status.statusText, {type: status.statusType});
-  if (status.username) {
-    user.setUsername(status.username);
-    console.log(
-      `Updating username: ${status.username}, status: ${status.statusType} ${status.statusText}`
-    );
-    return;
-  }
-  console.log(`Updating status: ${status.statusType} ${status.statusText}`);
+  user.setUsername(username);
 };
 
 export const enableActivitySelector = async (
   user: ClientUser,
   statusCollection: ClientStatus[],
+  usernames: string[],
   rotationTimeInMs = 2 * 60 * 60 * 1000
 ) => {
   await new Promise(resolve => setTimeout(resolve, 2000));
-  setInterval(setStatus, rotationTimeInMs, user, statusCollection);
+  setInterval(setStatus, rotationTimeInMs, user, statusCollection, usernames);
 };

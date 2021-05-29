@@ -2,7 +2,9 @@ import {ApplicationCommandData, Client, CommandInteraction} from 'discord.js';
 import {writeFile, readFile} from 'fs';
 import {InteractionPlugin} from '../../message/hooks';
 import {Config} from '../../config';
+import {loggerFactory} from '../../logging';
 
+const logger = loggerFactory('karma');
 export const TRIGGER_WORDS = ['karma', 'commend', 'report'] as const;
 export const [KARMA_COMMAND, COMMEND_COMMAND, REPORT_COMMAND] = TRIGGER_WORDS;
 
@@ -27,7 +29,7 @@ const addScore = (dataSet: VoteRecords, username: string) =>
 const commit = (dataset: VoteRecords, name: string) => {
   writeFile('./data/' + name + '.json', JSON.stringify(dataset), err => {
     if (err) {
-      console.error(err);
+      logger.error(err);
     }
   });
 };
@@ -37,13 +39,13 @@ const reports: VoteRecords = {};
 const load = (command: DataNames, targetObject: VoteRecords) => {
   readFile(`./data/${command}.json`, (err, data) => {
     if (err) {
-      console.error(`Could not load ${command}.json`);
+      logger.error(`Could not load ${command}.json`);
       return;
     }
 
     const records = JSON.parse(data.toString()) as VoteRecords;
     Object.keys(records).map(x => (targetObject[x] = records[x]));
-    console.log(`Populated ${command} dataset.`);
+    logger.info(`Populated ${command} dataset.`);
   });
 };
 
