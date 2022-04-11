@@ -1,10 +1,11 @@
-import {Client, CommandInteraction, MessageEmbed} from 'discord.js';
+import {AutocompleteInteraction, Client, CommandInteraction, MessageEmbed} from 'discord.js';
 import {Config, UploadConfig} from '../../config';
 import fetch from 'node-fetch';
-import {InteractionPlugin} from '../../message/hooks';
+import {AutoCompletePlugin, InteractionPlugin} from '../../message/hooks';
 import interactionError from './utils/interaction-error';
 import {OHLCDataPoint, rasterize, uploadImage} from './imaging';
 import {Logger} from 'winston';
+import logger from '../../logging';
 
 type OHLCData = [
   CloseTime: number,
@@ -16,7 +17,6 @@ type OHLCData = [
   QuoteVolume: number
 ];
 
-type functor = (m: CommandInteraction) => void;
 type APIResult = {
   result: {
     price: {
@@ -34,7 +34,7 @@ type APIResult = {
   allowance: {
     cost: number;
     remaining: number;
-    upgrade: string;
+    upgrade: String;
   };
 };
 
@@ -56,7 +56,7 @@ const emojiSelector = (value: number) => {
 };
 
 const call = async (ticker: Symbols, interaction: CommandInteraction) => {
-  interaction.defer();
+  await interaction.deferReply();
   const summaryPromise = fetch(
     `https://api.cryptowat.ch/markets/kraken/${ticker}/summary`
   );
@@ -64,10 +64,7 @@ const call = async (ticker: Symbols, interaction: CommandInteraction) => {
     `https://api.cryptowat.ch/markets/kraken/${ticker}/ohlc`
   );
   if (!ohlcResponse.ok) {
-    interactionError(
-      interaction,
-      'Sorry, there was an error getting graph data.'
-    );
+    await interactionError(interaction, 'Sorry, there was an error getting graph data.');
     return;
   }
 
@@ -91,7 +88,7 @@ const call = async (ticker: Symbols, interaction: CommandInteraction) => {
 
   const summary = await summaryPromise;
   if (!summary.ok) {
-    interactionError(interaction, 'Sorry, I could not getting summary data.');
+    await interactionError(interaction, 'Sorry, I could not get summary data.');
     return;
   }
 
@@ -106,7 +103,7 @@ const call = async (ticker: Symbols, interaction: CommandInteraction) => {
 
   const textBits = coins.find(x => x.value === ticker);
   if (!textBits) {
-    interactionError(interaction, 'Sorry, I could not find that coin.');
+    await interactionError(interaction, 'Sorry, I could not find that coin.');
     return;
   }
   const currency = '$';
@@ -133,10 +130,10 @@ const call = async (ticker: Symbols, interaction: CommandInteraction) => {
     embed.setThumbnail(imageUpload.url);
   }
 
-  interaction.followUp('', {embeds: [embed], ephemeral: false});
+  await interaction.followUp({embeds: [embed]});
 };
 
-const popularCoins = [
+const coins = [
   {value: 'btcusd', name: 'Bitcoin'},
   {value: 'ethusd', name: 'Ethereum'},
   {value: 'maticusd', name: 'Polygon'},
@@ -147,7 +144,6 @@ const popularCoins = [
   {value: 'etcusd', name: 'Ethereum Classic'},
   {value: 'ltcusd', name: 'Litecoin'},
   {value: 'linkusd', name: 'Chainlink'},
-  // 10
   {value: 'eosusd', name: 'EOSIO'},
   {value: 'filusd', name: 'Filecoin'},
   {value: 'bchusd', name: 'Bitcoin Cash'},
@@ -156,10 +152,6 @@ const popularCoins = [
   {value: 'uniusd', name: 'Uniswap'},
   {value: 'sushiusd', name: 'Sushiswap'},
   {value: 'aaveusd', name: 'Aave'},
-  // 18
-];
-
-const pageOne = [
   {value: 'gnousd', name: 'Gnosis'},
   {value: 'repusd', name: 'Augur (REP)'},
   {value: 'zecusd', name: 'Zcash'},
@@ -185,9 +177,6 @@ const pageOne = [
   {value: 'kavausd', name: 'Kava'},
   {value: 'storjusd', name: 'Storj'},
   {value: 'compusd', name: 'Compound'},
-];
-
-const pageTwo = [
   {value: 'kncusd', name: 'Kyber Network'},
   {value: 'repv2usd', name: 'Augur V2'},
   {value: 'snxusd', name: 'Synthetix'},
@@ -198,7 +187,7 @@ const pageTwo = [
   {value: 'keepusd', name: 'Keep Network'},
   {value: 'antusd', name: 'Aragon'},
   {value: 'tbtcusd', name: 'tBTC'},
-  {value: 'manausd', name: 'Decentra​land'},
+  {value: 'manausd', name: 'Decentraland'},
   {value: 'grtusd', name: 'Graph'},
   {value: 'flowusd', name: 'Flow'},
   {value: 'ewtusd', name: 'Energy Web Token'},
@@ -214,75 +203,58 @@ const pageTwo = [
   {value: 'bntusd', name: 'Bancor'},
 ];
 
-const coins = popularCoins.concat(pageOne, pageTwo);
+export const fuzzyMatch = (input: string, comparison: string) => {
+  input = input.toLowerCase();
+  comparison = comparison.toLowerCase();
+  const inputCharacters = Array.from(input);
+  const comparisonCharacters = Array.from(comparison);
 
-const plugin: InteractionPlugin = {
+  while(true) {
+    const character = inputCharacters.shift();
+    if(!character) {
+      return true;
+    }
+    if(!comparisonCharacters.includes(character)) {
+      return false;
+    }
+    const index = comparisonCharacters.indexOf(character);
+    comparisonCharacters.splice(index, 1);
+  }
+}
+
+const findMatches = (coin: string) => {
+  return coins.filter(x => fuzzyMatch(coin, x.name) || fuzzyMatch(coin, x.value));
+}
+
+
+const plugin: InteractionPlugin & AutoCompletePlugin = {
   descriptor: {
     name: 'crypto',
     description: 'Show current crypto exchange rates.',
-    options: [
-      {
-        name: 'popular',
-        description: 'Popular Coins',
-        type: 'SUB_COMMAND',
-        options: [
-          {
-            name: 'coin',
-            description: 'Name of coin',
-            type: 'STRING',
-            required: true,
-            choices: popularCoins,
-          },
-        ],
-      },
-      {
-        name: 'page-1',
-        description: 'Other Coins (Page 1)',
-        type: 'SUB_COMMAND',
-        options: [
-          {
-            name: 'coin',
-            description: 'Name of coin',
-            type: 'STRING',
-            required: true,
-            choices: pageOne,
-          },
-        ],
-      },
-      {
-        name: 'page-2',
-        description: 'Other Coins (Page 2)',
-        type: 'SUB_COMMAND',
-        options: [
-          {
-            name: 'coin',
-            description: 'Name of coin',
-            type: 'STRING',
-            required: true,
-            choices: pageTwo,
-          },
-        ],
-      },
-    ],
+    
+    options: [{
+      name: 'coin',
+      description: 'Enter the coin you want to track',
+      type: 'STRING',
+      autocomplete: true,
+      required: true
+    }],
   },
-  onInit(_: Client, config: Config, logger: Logger) {
+  onInit: async (_: Client, config: Config, logger: Logger) => {
     uploadConfig = config.uploadConfig;
-    logger.info('Cryptowatch initialized');
   },
-  onNewInteraction(interaction: CommandInteraction) {
-    if (interaction.options[0] === undefined) {
+  async onNewInteraction(interaction: CommandInteraction) {
+    const coinName = interaction.options.getString('coin');
+    if (!coinName) {
       return;
     }
-
-    if (interaction.options[0].options === undefined) {
-      return;
-    }
-    if (interaction.options[0].options[0] === undefined) {
-      return;
-    }
-    const option = <Symbols>interaction.options[0].options[0].value;
-    call(option, interaction);
+    await call(coinName, interaction);
   },
+  async onAutoComplete(interaction: AutocompleteInteraction) {
+    const coin = interaction.options.getString('coin')?.trim() || '';
+    const candidates = findMatches(coin).splice(0, 24);
+    await interaction.respond(candidates);
+  }
 };
 
 export default plugin;

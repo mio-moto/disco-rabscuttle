@@ -6,7 +6,7 @@ import {Logger} from 'winston';
 
 let logger: Logger;
 const jsmegahal = require('jsmegahal');
-const brain = new jsmegahal(2);
+const brain = new jsmegahal(3);
 
 function chunk(arr: Array<string>, chunkSize: number) {
   if (chunkSize <= 0) throw 'Invalid chunk size';
@@ -16,7 +16,7 @@ function chunk(arr: Array<string>, chunkSize: number) {
   return R;
 }
 
-const loadBrain = (brainFile: string, onFinished: () => void) => {
+const loadBrain = async (brainFile: string, onFinished: () => void) => {
   readFile(brainFile, {encoding: 'utf-8'}, async (err, data) => {
     if (err) {
       logger.error(err);
@@ -24,10 +24,10 @@ const loadBrain = (brainFile: string, onFinished: () => void) => {
     }
 
     const lines = data.toString().split('\n');
-    const chunks = chunk(lines, 10000);
+    const chunks = chunk(lines, 5000);
     for (let i = 0; i < chunks.length; i++) {
       chunks[i].forEach(x => brain.addMass(x));
-      await new Promise(r => setTimeout(r, 10));
+      await new Promise(r => setTimeout(r, 8));
     }
 
     logger.info(`Markov Brain tokenized ${lines.length} lines`);
@@ -35,13 +35,13 @@ const loadBrain = (brainFile: string, onFinished: () => void) => {
   });
 };
 
-export function markovReply(message: Message) {
+export async function markovReply(message: Message) {
   if (Math.random() < 1.0 / 3.0) {
-    message.reply(brain.getReplyFromSentence(message.content));
+    await message.reply(brain.getReplyFromSentence(message.content));
   } else if (Math.random() < 1.0 / 5.0) {
-    message.reply(brain.getReply());
+    await message.reply(brain.getReply());
   } else {
-    message.channel.send(brain.getReply());
+    await message.channel.send(brain.getReply());
   }
 }
 
@@ -54,11 +54,11 @@ interface Preload {
 const plugin: InteractionPlugin & MessagePlugin & Preload = {
   descriptor: {
     name: 'markov',
-    description: 'Let the bot babble.',
+    description: 'Let the ultimate wisdom of the god bot be bestowed upon you',
     options: [
       {
         name: 'prompt',
-        description: 'Prompt the bot in some regard.',
+        description: 'Ye, oh ye, let thy words be inspire the god bot',
         type: 'STRING',
         required: false,
       },
@@ -69,23 +69,22 @@ const plugin: InteractionPlugin & MessagePlugin & Preload = {
 
   async onInit(client: Client, config: Config, log: Logger) {
     logger = log;
-    loadBrain(loadConfig().brainFile, () => {
+    await loadBrain(loadConfig().brainFile, () => {
       this.loaded = true;
     });
 
     this.writeStream = createWriteStream(config.brainFile, {flags: 'a'});
   },
-  onNewInteraction(interaction: CommandInteraction) {
-    interaction.defer();
-    if (interaction.options[0]) {
-      interaction.followUp(
-        brain.getReplyFromSentence(interaction.options[0].value)
-      );
+  async onNewInteraction(interaction: CommandInteraction) {
+    await interaction.deferReply();
+    const prompt = interaction.options.getString('prompt');
+    if (prompt) {
+      await interaction.followUp(brain.getReplyFromSentence(prompt));
       return;
     }
-    interaction.followUp(brain.getReply());
+    await interaction.followUp(brain.getReply());
   },
-  onNewMessage(message: Message) {
+  async onNewMessage(message: Message) {
     if (this.loaded && this.preloadTexts.length > 0) {
       this.preloadTexts.forEach(x => brain.addMass(x));
       this.preloadTexts.length = 0;
@@ -96,7 +95,7 @@ const plugin: InteractionPlugin & MessagePlugin & Preload = {
     this.loaded ? brain.addMass(content) : this.preloadTexts.push(content);
 
     if (Math.random() < 1.0 / 5000.0) {
-      markovReply(message);
+      await markovReply(message);
     }
   },
 };

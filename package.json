@@ -17,10 +17,10 @@
     "ts-node": "^10.0.0",
     "tslint": "^6.1.0",
     "tslint-config-prettier": "^1.18.0",
-    "typescript": "^4.2.0"
+    "typescript": "^4.6.3"
   },
   "nodemonConfig": {
-    "exec": "ts-node src/index.ts",
+    "exec": "ts-node src/index.ts --trace-deprecation",
     "env": {
       "NODE_ENV": "development"
     },
@@ -36,19 +36,20 @@
     "clean": "gts clean",
     "compile": "tsc",
     "fix": "gts fix",
-    "prepare": "npm.cmd run compile",
-    "pretest": "npm.cmd run compile",
-    "posttest": "npm.cmd run lint"
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run lint"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "discord-api-types": "^0.18.1",
-    "discord.js": "git+https://github.com/discordjs/discord.js.git#e300518597955abf4bf3c3d2634b47b9b3964274",
+    "@discordjs/rest": "^0.1.0-canary.0",
+    "discord-api-types": "^0.23.1",
+    "discord.js": "^13.6.0",
     "form-data": "^3.0.1",
     "jimp": "^0.16.1",
     "jsmegahal": "^1.2.4",
-    "node-fetch": "^2.6.1",
+    "node-fetch": "^2.6.7",
     "winston": "^3.3.3"
   }
 }

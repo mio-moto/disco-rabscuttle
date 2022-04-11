@@ -6,6 +6,7 @@ import Quote from './plugins/quote';
 import Bark from './plugins/bark';
 import Markov from './plugins/markov';
 import StockTicker from './plugins/stock';
+import {EightPepe, SearchPepe} from './plugins/8pepe';
 
 import Robot from './../message';
 import {
@@ -25,9 +26,12 @@ const interactions = [
   CryptoTicker,
   DotaCustoms,
   StockTicker,
+  EightPepe,
+  SearchPepe
 ];
 
 export default function bindInteractions(client: Client, config: Config) {
+  const robotLogger = loggerFactory("Robot");
   interactions.forEach(x => {
     client.guilds.cache.forEach(async y => {
       y.commands.create(x.descriptor);
@@ -36,7 +40,7 @@ export default function bindInteractions(client: Client, config: Config) {
     if (x.onInit) {
       const logger = loggerFactory(x.descriptor.name);
       x.onInit(client, config, logger);
-      logger.info(`${x.descriptor.name} initialized`);
     }
+    robotLogger.info(`${x.descriptor.name} initialized`);
   });
 }

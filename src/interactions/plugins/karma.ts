@@ -104,16 +104,13 @@ const buildPlugin = (
   descriptor: ApplicationCommandData
 ): InteractionPlugin => ({
   descriptor: descriptor,
-  onInit: (_: Client, __: Config) => {},
-  onNewInteraction: (interaction: CommandInteraction) => {
-    if (!interaction.options[0].value) {
+  onNewInteraction: async (interaction: CommandInteraction) => {
+    const username = interaction.options.getString('username');
+    if (!username) {
       return;
     }
-    interaction.reply(
-      generateResponse(
-        interaction.commandName as ActionNames,
-        <string>interaction.options[0].value
-      )
+    await interaction.reply(
+      generateResponse(interaction.commandName as ActionNames, username)
     );
   },
 });

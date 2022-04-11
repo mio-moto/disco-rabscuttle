@@ -5,7 +5,8 @@
     "outDir": "build",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "Node"
+    "moduleResolution": "Node",
+    "target": "ESNext"
   },
   "include": ["src/**/*.ts", "test/**/*.ts"]
 }

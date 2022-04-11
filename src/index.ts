@@ -5,7 +5,9 @@ import bindInteractions from './interactions';
 import {enableActivitySelector} from './activity';
 import logger from './logging';
 
+
 (async () => {
+
   const client = new Client({
     intents: [
       Intents.FLAGS.GUILDS,
@@ -21,7 +23,7 @@ import logger from './logging';
     Robot.setup(config);
     bindInteractions(client, config);
     client.on('message', Robot.onNewMessage);
-    client.on('interaction', Robot.onNewInteraction);
+    client.on('interactionCreate', Robot.onNewInteraction);
   });
 
   logger.info('Loggin in...');

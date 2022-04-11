@@ -390,15 +390,15 @@ function response(): string {
 let lastInvoke = new Date(1900, 1);
 let botname = '';
 
-function bark(interaction: CommandInteraction) {
+async function bark(interaction: CommandInteraction) {
   const time = (new Date().getTime() - lastInvoke.getTime()) / 1000;
   if (time < 60) {
     return;
   }
 
-  const username = interaction.member?.user.username.toString() || '';
-  const random = interaction.guild?.members.cache.random().toString() || '';
-  interaction.reply(setNames(response(), username, random, botname));
+  const username = interaction.member?.user.username?.toString() ?? '';
+  const random = interaction.guild?.members.cache.random()?.toString() ?? '';
+  await interaction.reply(setNames(response(), username, random, botname));
   lastInvoke = new Date();
 }
 
@@ -407,7 +407,7 @@ const plugin: InteractionPlugin = {
     name: 'bark',
     description: 'Randomized rudeness from a robot.',
   },
-  onInit: (client: Client, _: Config) => {
+  onInit: async (client: Client, _: Config) => {
     botname = client.user?.toString() || '';
   },
   onNewInteraction: bark,

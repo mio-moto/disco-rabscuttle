@@ -15,7 +15,7 @@ export interface Config {
   brainFile: string;
   userId?: string;
   steamApiKey: string;
-  alphaVantageKey: string;
+  finnhubApiKey: string;
   uploadConfig: UploadConfig;
 }
 

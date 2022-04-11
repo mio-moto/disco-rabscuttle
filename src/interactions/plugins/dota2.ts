@@ -192,19 +192,19 @@ let steamApiKey = '';
 
 const strategy = {
   dp: async (name: string, interaction: CommandInteraction) => {
-    interaction.defer();
+    await interaction.deferReply();
 
     const searchRequest = await fetch(getSearchUrl(steamApiKey, name));
     if (!searchRequest.ok) {
       logger.error(searchRequest);
-      interactionError(interaction, 'Sorry, I cannot reach Valve.');
+      await interactionError(interaction, 'Sorry, I cannot reach Valve.');
       return;
     }
     const searchResponse: SearchResponse = JSON.parse(
       await searchRequest.text()
     );
     if (searchResponse.response.total <= 0) {
-      interactionError(
+      await interactionError(
         interaction,
         "Sorry, I couldn't find any custom game with that name."
       );
@@ -220,14 +220,14 @@ const strategy = {
 
     if (!detailsRequest.ok) {
       logger.error(detailsRequest);
-      interactionError(interaction, "Sorry, I couldn't reach valve.");
+      await interactionError(interaction, "Sorry, I couldn't reach valve.");
       return;
     }
     const detailsResponse: WorkshopDetailsResponse = JSON.parse(
       await detailsRequest.text()
     );
     if (detailsResponse.response.publishedfiledetails.length <= 0) {
-      interactionError(
+      await interactionError(
         interaction,
         "Sorry, I couldn't find details from the workshop."
       );
@@ -244,7 +244,7 @@ const strategy = {
     const playerCountRequest = await playerCountRequestPromise;
     if (!playerCountRequest.ok) {
       logger.error(playerCountRequest);
-      interactionError(
+      await interactionError(
         interaction,
         "Sorry, I couldn't fetch the player count."
       );
@@ -259,7 +259,7 @@ const strategy = {
     const playerLobbyRequest = await playerLobbyRequestPromise;
     if (!playerLobbyRequest.ok) {
       logger.error(playerLobbyRequest);
-      interactionError(interaction, "Sorry, I couldn't fetch lobby data.");
+      await interactionError(interaction, "Sorry, I couldn't fetch lobby data.");
       return;
     }
     const playerLobbyResponse: PlayerLobbyResponse = JSON.parse(
@@ -275,30 +275,6 @@ const strategy = {
       x => x === customGameId
     );
 
-    if (
-      detailsResponse.response.publishedfiledetails[0].creator ===
-      '76561198054179075'
-    ) {
-      currentRanking = Math.min(
-        Math.floor(currentRanking * 1.3),
-        currentPopularGames.length
-      );
-      yesterdayRanking = Math.min(
-        Math.floor(currentRanking * 1.3),
-        currentPopularGames.length
-      );
-
-      playerCount = Math.floor(playerCount * 0.7);
-      spectatorCount = Math.floor(playerCount * 0.7);
-      lobbyPlayers = Math.floor(lobbyPlayers * 0.7);
-      lobbyCount = Math.floor(lobbyCount * 0.7);
-      if (lobbyPlayers > 0) {
-        lobbyCount = Math.max(1, lobbyCount);
-      }
-      if (lobbyCount > 0) {
-        lobbyPlayers = Math.max(1, lobbyCount);
-      }
-    }
     const trend = trendingText(currentRanking, yesterdayRanking);
 
     const messageEmbed = new MessageEmbed()
@@ -321,7 +297,7 @@ const strategy = {
           `${decimal(favorited, 1, false, true)} favourited`,
         true
       );
-    return interaction.followUp(messageEmbed);
+    return await interaction.followUp({embeds: [messageEmbed], ephemeral: false});
   },
 };
 
@@ -408,7 +384,7 @@ const plugin: InteractionPlugin = {
       },
     ],
   },
-  onInit(client: Client, config: Config, log: Logger) {
+  onInit: async (client: Client, config: Config, log: Logger) => {
     logger = log;
     steamApiKey = config.steamApiKey;
     const yesterday = new Date();
@@ -436,20 +412,13 @@ const plugin: InteractionPlugin = {
       setInterval(updateRanking, 86400000);
     });
   },
-  onNewInteraction(interaction: CommandInteraction) {
-    if (
-      interaction.member?.user.username === 'darklord' &&
-      Math.random() > 0.5
-    ) {
-      interaction.reply('Insert coint to continue', {ephemeral: true});
+  async onNewInteraction(interaction: CommandInteraction) {
+    const name = interaction.options.getString('custom-game-name');
+    if (!name) {
       return;
     }
 
-    if (!interaction.options[0].value) {
-      return;
-    }
-
-    strategy['dp'](<string>interaction.options[0].value, interaction);
+    strategy['dp'](name, interaction);
   },
 };
 

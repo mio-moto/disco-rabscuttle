@@ -1,37 +1,39 @@
-import {Client, CommandInteraction, MessageEmbed} from 'discord.js';
+import { AutocompleteInteraction, Client, CommandInteraction, MessageEmbed } from 'discord.js';
 import fetch from 'node-fetch';
-import {Config, UploadConfig} from '../../config';
-import {InteractionPlugin} from '../../message/hooks';
-import {rasterize, uploadImage, ohlcMax, ohlcMin} from './imaging';
+import { Config, UploadConfig } from '../../config';
+import { AutoCompletePlugin, InteractionPlugin } from '../../message/hooks';
+import { rasterize, uploadImage, ohlcMax, ohlcMin } from './imaging';
 import interactionError from './utils/interaction-error';
 
 let key = '';
+let keyUsage = 0;
 let uploadConfig: UploadConfig | null = null;
 
 const INTRA_DAY_ENDPOINT =
-  'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol={symbol}&interval=60min&apikey={key}&adjusted=true';
+  'https://finnhub.io/api/v1/stock/candle?symbol={symbol}&resolution=15&from=0&to={end}&token={key}';
+
+const SEARCH_ENDPOINT =
+  'https://finnhub.io/api/v1/search?q={symbol}&token={key}'
 
 type OHLCDataResponse = {
-  [key: string]: {
-    '1. open': string;
-    '2. high': string;
-    '3. low': string;
-    '4. close': string;
-    '5. volume': string;
-  };
+  c: number[],
+  h: number[],
+  l: number[],
+  o: number[],
+  s: "ok" | "no_data",
+  t: number[],
+  v: number[]
 };
 
-type IntradayResponse = {
-  'Meta Data': {
-    '1. Information': string;
-    '2. Symbol': string;
-    '3. Last Refreshed': string;
-    '4. Interval': string;
-    '5. Output Size': string;
-    '6. Time Zone': string;
-  };
-  'Time Series (60min)': OHLCDataResponse;
-};
+type SearchResponse = {
+  count: number,
+  result: {
+    "description": string,
+    "displaySymbol": string,
+    "symbol": string,
+    "type": string
+  }[]
+}
 
 type OHLCDataPoint = {
   dateTime: Date;
@@ -43,23 +45,28 @@ type OHLCDataPoint = {
 };
 
 const getIntraDayEndpoint = (symbol: string, key: string) =>
-  INTRA_DAY_ENDPOINT.replace('{symbol}', symbol).replace('{key}', key);
+  INTRA_DAY_ENDPOINT
+    .replace('{symbol}', symbol)
+    .replace('{key}', key)
+    .replace('{end}', `${Math.floor(Date.now() / 1000)}`);
+const getSearchEndpoint = (symbol: string, key: string) =>
+  SEARCH_ENDPOINT.replace('{symbol}', symbol).replace('{key}', key);
 
 // from most oldest to most recent datapoint
 const getSortedTimeSeries = (timeSeries: OHLCDataResponse): OHLCDataPoint[] => {
-  return Object.keys(timeSeries)
-    .map(x => {
-      const data = timeSeries[x];
-      return {
-        dateTime: new Date(x + ' GMT'),
-        open: parseFloat(data['1. open']),
-        high: parseFloat(data['2. high']),
-        low: parseFloat(data['3. low']),
-        close: parseFloat(data['4. close']),
-        volume: parseFloat(data['5. volume']),
-      };
+  const length = timeSeries.t.length;
+  const entries: OHLCDataPoint[] = [];
+  for(let i = 0; i < timeSeries.t.length; i++) {
+    entries.push({
+      dateTime: new Date(timeSeries.t[i] * 1000),
+      open: timeSeries.o[i],
+      high: timeSeries.h[i],
+      low: timeSeries.l[i],
+      close: timeSeries.c[i],
+      volume: timeSeries.v[i]
     })
-    .sort((a, b) => a.dateTime.getTime() - b.dateTime.getTime());
+  }
+  return entries.sort((a, b) => a.dateTime.getTime() - b.dateTime.getTime());
 };
 
 const getMostRecentDayMetrics = (datapoints: OHLCDataPoint[]) => {
@@ -81,24 +88,23 @@ const reactIntraday = async (
   interaction: CommandInteraction,
   symbol: string
 ) => {
-  const intradayRequest = await fetch(getIntraDayEndpoint(symbol, key));
+  const uri = getIntraDayEndpoint(symbol, key);
+  const intradayRequest = await fetch(uri);
   if (!intradayRequest.ok) {
-    interactionError(interaction, 'Sorry, cannot get any data currently.');
+    await interactionError(interaction, 'Sorry, cannot get any data currently.');
     return;
   }
-  const responseText = await intradayRequest.text();
-  if (responseText.toLowerCase().includes('error')) {
-    interactionError(
+  
+  const intradayResponse = (await intradayRequest.json()) as OHLCDataResponse;
+  if(intradayResponse.s === "no_data") {
+    await interactionError(
       interaction,
       'Sorry, it seems this stock symbol does not exist.'
     );
     return;
   }
-  const intradayResponse = JSON.parse(responseText) as IntradayResponse;
-
-  const timeSeries = getSortedTimeSeries(
-    intradayResponse['Time Series (60min)']
-  );
+  
+  const timeSeries = getSortedTimeSeries(intradayResponse);
 
   const filename = `${symbol}-${Date.now()}.png`;
   const image = rasterize(80, timeSeries.slice(-27));
@@ -109,7 +115,7 @@ const reactIntraday = async (
   const open = opening?.open ?? -1;
 
   if (open < 0) {
-    interactionError(
+    await interactionError(
       interaction,
       "I made an error that I couldn't recover from."
     );
@@ -146,10 +152,10 @@ const reactIntraday = async (
   if (upload.success) {
     embed.setThumbnail(upload.url);
   }
-  interaction.followUp(embed);
+  await interaction.followUp({ embeds: [embed] });
 };
 
-const plugin: InteractionPlugin = {
+const plugin: InteractionPlugin & AutoCompletePlugin = {
   descriptor: {
     name: 'stock',
     description: 'Display intra-day information of stocks.',
@@ -159,18 +165,49 @@ const plugin: InteractionPlugin = {
         name: 'symbol',
         description: 'Exchange symbol you want to display data for.',
         required: true,
+        autocomplete: true
       },
     ],
   },
-  onInit(_: Client, config: Config) {
+  onInit: async (_: Client, config: Config) => {
     uploadConfig = config.uploadConfig;
-    key = config.alphaVantageKey;
+    key = config.finnhubApiKey;
   },
-  onNewInteraction(interaction: CommandInteraction) {
-    interaction.defer();
-    const symbol = <string>interaction.options[0].value;
-    reactIntraday(interaction, symbol);
+  async onNewInteraction(interaction: CommandInteraction) {
+    await interaction.deferReply();
+    const symbol = interaction.options.getString('symbol', true);
+    await reactIntraday(interaction, symbol);
   },
+  async onAutoComplete(interaction: AutocompleteInteraction) {
+    const searchString = interaction.options.getString("symbol");
+    if (!searchString) {
+      await interaction.respond([]);
+      return;
+    }
+    const begin = Date.now();
+
+    (async () => {
+      const response = (await (await fetch(getSearchEndpoint(searchString, key))).json()) as SearchResponse;
+      const results = response.result.map(x => {
+        const symbol = x.symbol;
+        const name = x.description;
+
+        const maxLength = 100 - (symbol.length + 3);
+        const displayName = `[${symbol}] ${name.substring(0, maxLength)}`;
+
+        return {
+          "name": displayName,
+          value: x.symbol
+        }
+      }).splice(0, 25);
+
+      const completion = Date.now();
+      const timeTaken = completion - begin;
+      if(timeTaken <= 2750) {
+        await interaction.respond(results);
+      }
+    })()
+  }
 };
 
 export default plugin;
