@@ -92,12 +92,12 @@ const pepeReply = async (interaction: CommandInteraction) => {
 };
 
 const pepeSearch = async (interaction: AutocompleteInteraction) => {
-  const query = interaction.options.getString("query", true);
+  const query = interaction.options.getString("query", true).toLowerCase();
   if (query.length <= 0) {
     const randomPepes = shuffle(pepes).slice(0, 25).sort((a, b) => a.name.localeCompare(b.name));
     return await interaction.respond(randomPepes);
   }
-  const matches = shuffle(pepes.filter(x => x.name.includes(query))).slice(0, 25);
+  const matches = shuffle(pepes.filter(x => x.name.toLowerCase().includes(query))).slice(0, 25);
   await interaction.respond(matches);
 }
 
