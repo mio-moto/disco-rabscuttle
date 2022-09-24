@@ -330,12 +330,12 @@ const trendingText = (currentRanking: number, yesterdayRanking: number) => {
     return `${current}`;
   }
   if (current < yesterday) {
-    return `${current} (▲ ${yesterday})`;
+    return `${current} (▼ ${yesterday})`;
   }
   if (current === yesterday) {
     return `${current} (~ ${yesterday})`;
   }
-  return `${current} (▼ ${yesterday})`;
+  return `${current} (▲ ${yesterday})`;
 };
 
 // timestamp as unix timestamp, which is new Date() / 1000 (!)

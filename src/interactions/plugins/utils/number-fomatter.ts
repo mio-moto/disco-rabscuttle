@@ -15,8 +15,8 @@ export const decimal = (
   round = false,
   fixed = false
 ) => {
-  if (typeof value !== 'number') {
-    return value;
+  if (typeof value !== 'number' || value < 1000) {
+    return `${value}`;
   }
   let indexer = 0;
   while (value > 1000) {
@@ -28,7 +28,7 @@ export const decimal = (
     return '~' + Math.round(value) + metric;
   }
   if (fixed) {
-    return value.toFixed(width) + metric;
+    return `${value.toFixed(width)}${metric}`
   }
 
   return value + metric;

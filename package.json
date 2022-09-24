@@ -20,7 +20,7 @@
     "typescript": "^4.6.3"
   },
   "nodemonConfig": {
-    "exec": "ts-node src/index.ts --trace-deprecation",
+    "exec": "ts-node src/index.ts",
     "env": {
       "NODE_ENV": "development"
     },
@@ -44,12 +44,17 @@
   "license": "MIT",
   "dependencies": {
     "@discordjs/rest": "^0.1.0-canary.0",
+    "bufferutil": "^4.0.6",
     "discord-api-types": "^0.23.1",
     "discord.js": "^13.6.0",
+    "erlpack": "github:discord/erlpack",
     "form-data": "^3.0.1",
     "jimp": "^0.16.1",
     "jsmegahal": "^1.2.4",
     "node-fetch": "^2.6.7",
-    "winston": "^3.3.3"
+    "utf-8-validate": "^5.0.9",
+    "wikipedia": "^1.1.9",
+    "winston": "^3.3.3",
+    "zlib-sync": "^0.1.7"
   }
 }

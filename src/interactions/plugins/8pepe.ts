@@ -108,7 +108,7 @@ const pepeSearchReply = async (interaction: CommandInteraction) => {
     ephemeral: false,
     embeds: [
       new MessageEmbed()
-        .setTitle(pepe.name)
+        .setTitle(pepe.name ?? "")
         .setURL(pepe.value)
         .setImage(url)
     ]

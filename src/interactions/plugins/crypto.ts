@@ -52,7 +52,10 @@ const emojiSelector = (value: number) => {
   if (value >= -10) {
     return '📉';
   }
-  return '🧱';
+  if(value >= -15) {
+    return '🧱';
+  }
+  return '🦽';
 };
 
 const call = async (ticker: Symbols, interaction: CommandInteraction) => {

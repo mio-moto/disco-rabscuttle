@@ -7,6 +7,8 @@ import Bark from './plugins/bark';
 import Markov from './plugins/markov';
 import StockTicker from './plugins/stock';
 import {EightPepe, SearchPepe} from './plugins/8pepe';
+import SteamAppSearch from './plugins/steam-app';
+import WikiSearch from './plugins/wikipedia';
 
 import Robot from './../message';
 import {
@@ -15,6 +17,7 @@ import {
   ReportInteraction,
 } from './plugins/karma';
 import {loggerFactory} from '../logging';
+import { EvilButtonPlugin } from './plugins/evilButton';
 
 const interactions = [
   Bark,
@@ -22,16 +25,22 @@ const interactions = [
   CommendInteraction,
   KarmaInteraction,
   Quote,
+  SteamAppSearch,
   Markov,
   CryptoTicker,
   DotaCustoms,
   StockTicker,
   EightPepe,
-  SearchPepe
+  SearchPepe,
+  WikiSearch
 ];
 
 export default function bindInteractions(client: Client, config: Config) {
   const robotLogger = loggerFactory("Robot");
+  Robot.register(EvilButtonPlugin);
+  if(EvilButtonPlugin.onInit) {
+    EvilButtonPlugin?.onInit(client, config, loggerFactory("EvilButtonPlugin"));
+  }
   interactions.forEach(x => {
     client.guilds.cache.forEach(async y => {
       y.commands.create(x.descriptor);
