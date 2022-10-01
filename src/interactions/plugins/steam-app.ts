@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, Client, CommandInteraction, Message, MessageEmbed, MessageOptions } from 'discord.js';
+import { AutocompleteInteraction, Client, CommandInteraction, InteractionReplyOptions, Message, MessageEmbed, MessageOptions, MessagePayload } from 'discord.js';
 import fetch from 'node-fetch';
 import { Logger } from 'winston';
 import { Config } from '../../config';
@@ -152,13 +152,14 @@ const onNewInteraction = async (interaction: CommandInteraction) => {
         if(!embed) {
             return await interactionError(interaction, "Sorry, couldn't find or translate the app", 10_000);
         }
-        const options: MessageOptions = {embeds: [embed]};
+        const options: InteractionReplyOptions = {embeds: [embed]};
         if(message) {
             const userPreamble = interaction.member ? `${interaction.member.user} said:\n` : ''; 
             options['content'] = `${userPreamble}> ${message}`;
-            await interaction.channel?.send(options);
+            await interaction.channel?.send(options as MessageOptions);
             return await interactionError(interaction, "Responding in public - I will delete this reply.");
         }
+        
         return await interaction.followUp(options);
     } catch(e) {
         return await interactionError(interaction, `Excpetional: ${e}`);
