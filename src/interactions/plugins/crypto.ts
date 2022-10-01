@@ -1,4 +1,4 @@
-import {AutocompleteInteraction, Client, CommandInteraction, MessageEmbed} from 'discord.js';
+import {AutocompleteInteraction, Client, ChatInputCommandInteraction, EmbedBuilder, ApplicationCommandOptionType} from 'discord.js';
 import {Config, UploadConfig} from '../../config';
 import fetch from 'node-fetch';
 import {AutoCompletePlugin, InteractionPlugin} from '../../message/hooks';
@@ -58,7 +58,7 @@ const emojiSelector = (value: number) => {
   return '🦽';
 };
 
-const call = async (ticker: Symbols, interaction: CommandInteraction) => {
+const call = async (ticker: Symbols, interaction: ChatInputCommandInteraction) => {
   await interaction.deferReply();
   const summaryPromise = fetch(
     `https://api.cryptowat.ch/markets/kraken/${ticker}/summary`
@@ -111,24 +111,23 @@ const call = async (ticker: Symbols, interaction: CommandInteraction) => {
   }
   const currency = '$';
   const symbol = textBits.value.replace('btc', '').toUpperCase();
-  const color = percentage < 0 ? 'RED' : 'GREEN';
+  const color = percentage < 0 ? 'Red' : 'Green';
   const emoji = emojiSelector(percentage);
 
-  const embed = new MessageEmbed()
+  const embed = new EmbedBuilder()
     .setColor(color)
     .setTitle(
       `${emoji} ${textBits.name} (${symbol}): ${close.toFixed(2)}${currency}`
     )
-    .addField(
-      '24h Range',
-      `${percentage.toFixed(2)}% (${range.toFixed(2)}${currency})`,
-      true
-    )
-    .addField(
-      'High / Low',
-      `${high.toFixed(2)}${currency} - ${low.toFixed(2)}${currency}`,
-      true
-    );
+    .addFields({
+      name: '24h Range',
+      value: `${percentage.toFixed(2)}% (${range.toFixed(2)}${currency})`,
+      inline: true
+    }, {
+      name: 'High / Low',
+      value: `${high.toFixed(2)}${currency} - ${low.toFixed(2)}${currency}`,
+      inline: true
+    })
   if (imageUpload.success) {
     embed.setThumbnail(imageUpload.url);
   }
@@ -238,7 +237,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
     options: [{
       name: 'coin',
       description: 'Enter the coin you want to track',
-      type: 'STRING',
+      type: ApplicationCommandOptionType.String,
       autocomplete: true,
       required: true
     }],
@@ -246,7 +245,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
   onInit: async (_: Client, config: Config, logger: Logger) => {
     uploadConfig = config.uploadConfig;
   },
-  async onNewInteraction(interaction: CommandInteraction) {
+  async onNewInteraction(interaction: ChatInputCommandInteraction) {
     const coinName = interaction.options.getString('coin');
     if (!coinName) {
       return;

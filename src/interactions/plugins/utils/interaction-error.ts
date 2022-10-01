@@ -1,7 +1,7 @@
-import {CommandInteraction} from 'discord.js';
+import {ChatInputCommandInteraction} from 'discord.js';
 
 export default async (
-  interaction: CommandInteraction,
+  interaction: ChatInputCommandInteraction,
   message: string,
   durationInMs = 10000
 ) => {

@@ -1,4 +1,4 @@
-import { Client, Intents } from 'discord.js';
+import { Client, IntentsBitField } from 'discord.js';
 import Robot from './message';
 import loadConfig from './config';
 import bindInteractions from './interactions';
@@ -12,9 +12,9 @@ Robot.setup(config);
 (async () => {
   const client = new Client({
     intents: [
-      Intents.FLAGS.GUILDS,
-      Intents.FLAGS.GUILD_MESSAGES,
-      Intents.FLAGS.GUILD_WEBHOOKS,
+      IntentsBitField.Flags.Guilds,
+      IntentsBitField.Flags.GuildMessages,
+      IntentsBitField.Flags.GuildWebhooks,
     ],
   });
 

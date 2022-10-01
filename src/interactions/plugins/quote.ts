@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, Client, CommandInteraction } from 'discord.js';
+import { AutocompleteInteraction, Client, ChatInputCommandInteraction, ApplicationCommandOptionType } from 'discord.js';
 import { readFile, writeFile } from 'fs';
 import { AutoCompletePlugin, InteractionPlugin } from '../../message/hooks';
 import { Config } from '../../config';
@@ -100,7 +100,7 @@ const runtime = {
   statusReport: () =>
     `There are ${quotes.length
     } quotes from ${getUsercount()} shitposters. You're welcome.`,
-  addQuote: (interaction: CommandInteraction): string => {
+  addQuote: (interaction: ChatInputCommandInteraction): string => {
     // quote: string, author: string
     var quote = interaction.options.getString("quote", true);
     var author = interaction.member?.user.username ?? 'unknown';
@@ -154,17 +154,17 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
     description: 'Sending and storing quotes',
     options: [
       {
-        type: 'SUB_COMMAND',
+        type: ApplicationCommandOptionType.Subcommand,
         name: 'random',
         description: 'Blerp a random quote',
       },
       {
-        type: 'SUB_COMMAND',
+        type: ApplicationCommandOptionType.Subcommand,
         name: 'add',
         description: 'Add a new command',
         options: [
           {
-            type: 'STRING',
+            type: ApplicationCommandOptionType.String,
             name: 'quote',
             description: 'Type the message you want to add.',
             required: true,
@@ -172,17 +172,17 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
         ],
       },
       {
-        type: 'SUB_COMMAND',
+        type: ApplicationCommandOptionType.Subcommand,
         name: 'status',
         description: 'Brief panel about the contents of this database.',
       },
       {
-        type: 'SUB_COMMAND',
+        type: ApplicationCommandOptionType.Subcommand,
         name: 'search',
         description: 'Reply with a specific quote.',
         options: [
           {
-            type: 'STRING',
+            type: ApplicationCommandOptionType.String,
             name: 'query',
             description: 'string that partially matches a quote',
             autocomplete: true,
@@ -191,12 +191,12 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
         ],
       },
       {
-        type: 'SUB_COMMAND',
+        type: ApplicationCommandOptionType.Subcommand,
         name: 'index',
         description: 'Send a specific quote by its number',
         options: [
           {
-            type: 'NUMBER',
+            type: ApplicationCommandOptionType.Number,
             name: 'index',
             description: 'Number that matches the quote',
             autocomplete: true,
@@ -211,7 +211,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
     logger = log;
     load();
   },
-  onNewInteraction: async (interaction: CommandInteraction) => {
+  onNewInteraction: async (interaction: ChatInputCommandInteraction) => {
     const subCommand = interaction.options.getSubcommand() as "random" | "status" | "add" | "search" | "index";
     let index: number;
     switch (subCommand) {

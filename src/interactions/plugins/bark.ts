@@ -1,4 +1,4 @@
-import {Client, CommandInteraction} from 'discord.js';
+import {Client, ChatInputCommandInteraction} from 'discord.js';
 import {InteractionPlugin} from '../../message/hooks';
 import {Config} from '../../config';
 
@@ -390,7 +390,7 @@ function response(): string {
 let lastInvoke = new Date(1900, 1);
 let botname = '';
 
-async function bark(interaction: CommandInteraction) {
+async function bark(interaction: ChatInputCommandInteraction) {
   const time = (new Date().getTime() - lastInvoke.getTime()) / 1000;
   if (time < 60) {
     return;

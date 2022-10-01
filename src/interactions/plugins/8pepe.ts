@@ -1,7 +1,8 @@
 import {
+  ApplicationCommandOptionType,
   AutocompleteInteraction,
-  CommandInteraction,
-  MessageEmbed
+  ChatInputCommandInteraction,
+  EmbedBuilder
 } from 'discord.js';
 import { AutoCompletePlugin, InteractionPlugin } from '../../message/hooks';
 import { readFileSync } from 'fs';
@@ -69,7 +70,7 @@ let activeList: string[] = [];
 const seedPepe = (phrase: string) => {
   const hashValue = Math.abs(hash(phrase.toLowerCase().trim()));
   const entry = hashValue % URIs.length;
-  return new MessageEmbed().setFooter({ text: phrase }).setImage(URIs[entry]);
+  return new EmbedBuilder().setFooter({ text: phrase }).setImage(URIs[entry]);
 }
 
 const randomPepe = () => {
@@ -79,7 +80,7 @@ const randomPepe = () => {
   return activeList.shift() ?? '';
 };
 
-const pepeReply = async (interaction: CommandInteraction) => {
+const pepeReply = async (interaction: ChatInputCommandInteraction) => {
   const phrase = interaction.options.getString('phrase');
   if (phrase && phrase.length > 0) {
     await interaction.reply({
@@ -101,13 +102,13 @@ const pepeSearch = async (interaction: AutocompleteInteraction) => {
   await interaction.respond(matches);
 }
 
-const pepeSearchReply = async (interaction: CommandInteraction) => {
+const pepeSearchReply = async (interaction: ChatInputCommandInteraction) => {
   const url = interaction.options.getString("query", true);
   const pepe = pepes.find(x => x.value == url)!;
   await interaction.reply({
     ephemeral: false,
     embeds: [
-      new MessageEmbed()
+      new EmbedBuilder()
         .setTitle(pepe.name ?? "")
         .setURL(pepe.value)
         .setImage(url)
@@ -120,7 +121,7 @@ export const SearchPepe: InteractionPlugin & AutoCompletePlugin = {
     name: 'pepe',
     description: 'Search the pepe library',
     options: [{
-      type: 'STRING',
+      type: ApplicationCommandOptionType.String,
       name: 'query',
       description: 'Search phrase to find a pepe from',
       required: true,
@@ -137,7 +138,7 @@ export const EightPepe: InteractionPlugin = {
     description: 'Ask the mighty Rabscootle a question and he will respond.',
     options: [
       {
-        type: 'STRING',
+        type: ApplicationCommandOptionType.String,
         name: 'phrase',
         description: 'Optional seed phrase',
         required: false

@@ -1,12 +1,12 @@
-import { AutocompleteInteraction, Client, CommandInteraction, MessageEmbed } from 'discord.js';
+import { AutocompleteInteraction, Client, ChatInputCommandInteraction, EmbedBuilder, Embed, ApplicationCommandOptionType } from 'discord.js';
 import { Config } from '../../config';
 import { AutoCompletePlugin, InteractionPlugin } from '../../message/hooks';
 import interactionError from './utils/interaction-error';
 import wiki, { Page } from 'wikipedia';
 
 
-const buildEmbed = async (page: Page): Promise<MessageEmbed> => {
-    const embed = new MessageEmbed();
+const buildEmbed = async (page: Page): Promise<EmbedBuilder> => {
+    const embed = new EmbedBuilder();
     embed.setURL(await page.canonicalurl);
 
     const summary = await page.summary();
@@ -32,7 +32,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
       description: 'Search and find wikipedia pages.',
       options: [
         {
-          type: 'STRING',
+          type: ApplicationCommandOptionType.String,
           name: 'query',
           description: 'The query of the wikipedia page that interests you.',
           required: true,
@@ -41,7 +41,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
       ],
     },
     onInit: async (_: Client, __: Config) => { },
-    async onNewInteraction(interaction: CommandInteraction) {
+    async onNewInteraction(interaction: ChatInputCommandInteraction) {
       await interaction.deferReply();
       var query = interaction.options.getString("query", true);
       var pageNumber = Number.parseInt(query, 10);

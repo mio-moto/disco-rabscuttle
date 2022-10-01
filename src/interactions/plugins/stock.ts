@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, Client, CommandInteraction, MessageEmbed } from 'discord.js';
+import { AutocompleteInteraction, Client, ChatInputCommandInteraction, EmbedBuilder, ApplicationCommandOptionType } from 'discord.js';
 import fetch from 'node-fetch';
 import { Config, UploadConfig } from '../../config';
 import { AutoCompletePlugin, InteractionPlugin } from '../../message/hooks';
@@ -85,7 +85,7 @@ const getMostRecentDayMetrics = (datapoints: OHLCDataPoint[]) => {
 };
 
 const reactIntraday = async (
-  interaction: CommandInteraction,
+  interaction: ChatInputCommandInteraction,
   symbol: string
 ) => {
   const uri = getIntraDayEndpoint(symbol, key);
@@ -138,17 +138,18 @@ const reactIntraday = async (
   const percentageChange = (priceChange * 100) / open;
   const sign = priceChange > 0 ? '+' : '';
 
-  const embed = new MessageEmbed()
-    .setColor(open > close ? 'RED' : 'GREEN')
+  const embed = new EmbedBuilder()
+    .setColor(open > close ? 'Red' : 'Green')
     .setTitle(`${trendEmoji} ${symbol.toUpperCase()} ${close.toFixed(2)}$`)
-    .addField(
-      'Daily Range',
-      `${sign}${percentageChange.toFixed(2)}% (${sign}${priceChange.toFixed(
-        2
-      )}$)`,
-      true
-    )
-    .addField('High / Low', `${high.toFixed(2)}$ / ${low.toFixed(2)}$`, true);
+    .addFields({
+      name: 'Daily Range',
+      value: `${sign}${percentageChange.toFixed(2)}% (${sign}${priceChange.toFixed(2)}$)`,
+      inline: true
+    }, {
+      name: 'High / Low',
+      value: `${high.toFixed(2)}$ / ${low.toFixed(2)}$`,
+      inline: true
+    });
   if (upload.success) {
     embed.setThumbnail(upload.url);
   }
@@ -161,7 +162,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
     description: 'Display intra-day information of stocks.',
     options: [
       {
-        type: 'STRING',
+        type: ApplicationCommandOptionType.String,
         name: 'symbol',
         description: 'Exchange symbol you want to display data for.',
         required: true,
@@ -173,7 +174,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
     uploadConfig = config.uploadConfig;
     key = config.finnhubApiKey;
   },
-  async onNewInteraction(interaction: CommandInteraction) {
+  async onNewInteraction(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
     const symbol = interaction.options.getString('symbol', true);
     await reactIntraday(interaction, symbol);
