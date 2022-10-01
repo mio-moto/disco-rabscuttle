@@ -17,7 +17,7 @@ import {
   ReportInteraction,
 } from './plugins/karma';
 import {loggerFactory} from '../logging';
-import { EvilButtonPlugin } from './plugins/evilButton';
+// import { EvilButtonPlugin } from './plugins/evilButton';
 
 const interactions = [
   Bark,
@@ -37,10 +37,12 @@ const interactions = [
 
 export default function bindInteractions(client: Client, config: Config) {
   const robotLogger = loggerFactory("Robot");
+  /*
   Robot.register(EvilButtonPlugin);
   if(EvilButtonPlugin.onInit) {
     EvilButtonPlugin?.onInit(client, config, loggerFactory("EvilButtonPlugin"));
   }
+  */
   interactions.forEach(x => {
     client.guilds.cache.forEach(async y => {
       y.commands.create(x.descriptor);

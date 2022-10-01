@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, Client, CommandInteraction, InteractionReplyOptions, Message, MessageEmbed, MessageOptions, MessagePayload } from 'discord.js';
+import { ApplicationCommandOptionType, AutocompleteInteraction, Client, ChatInputCommandInteraction, InteractionReplyOptions, Message, EmbedBuilder, MessagePayload, MessageCreateOptions } from 'discord.js';
 import fetch from 'node-fetch';
 import { Logger } from 'winston';
 import { Config } from '../../config';
@@ -103,7 +103,7 @@ const findAppId = (input: string) => {
     return appList.applist.apps.find(x => x.appid == numeric) ?? appList.applist.apps.find(x => x.name == input);
 }
 
-const generateEmbed = async (nameOrId: string): Promise<MessageEmbed | null> => {
+const generateEmbed = async (nameOrId: string): Promise<EmbedBuilder | null> => {
     const appEntry = findAppId(nameOrId);
     if(appEntry == null) {
         return null;
@@ -111,7 +111,7 @@ const generateEmbed = async (nameOrId: string): Promise<MessageEmbed | null> => 
     const details = await loadAppDetails(appEntry.appid);
     const playerData = await loadAppPlayers(appEntry.appid);
     const appUrl = `https://store.steampowered.com/app/${appEntry.appid}/`;
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
         .setTitle(details.name)
         .setImage(details.header_image)
         .setURL(appUrl)
@@ -119,30 +119,29 @@ const generateEmbed = async (nameOrId: string): Promise<MessageEmbed | null> => 
         .setAuthor({name: "Steam", url: appUrl});
 
     if(details.price_overview) {
-            embed.addField("Price", details.price_overview.final_formatted, true);
-        
+        embed.addFields({name: "Price", value: details.price_overview.final_formatted, inline: true});
     } 
     if(details.metacritic) {
-        embed.addField("Metacritic", `${details.metacritic.score}`, true);
+        embed.addFields({name: "Metacritic", value: `${details.metacritic.score}`, inline: true});
     }
     if(details.recommendations) {
-        embed.addField("Recommendations", `${decimal(details.recommendations.total, 2, false, true)}`, true);
+        embed.addFields({name: "Recommendations", value: `${decimal(details.recommendations.total, 2, false, true)}`, inline: true});
     }
     if(details.release_date) {
-        embed.addField(details.release_date.coming_soon ? "Coming soon" : "Release Date", details.release_date.date, true);
+        embed.addFields({name: details.release_date.coming_soon ? "Coming soon" : "Release Date", value: details.release_date.date, inline: true});
     }
     if(playerData) {
-        embed.addField("Players", decimal(playerData.currentPlayers, 2, false, true), true);
-        embed.addField("24h peak", decimal(playerData.max24Players, 2, false, true), true);
+        embed.addFields({name: "Players", value: decimal(playerData.currentPlayers, 2, false, true), inline: true});
+        embed.addFields({name: "24h peak", value: decimal(playerData.max24Players, 2, false, true), inline: true});
         // doesn't need more than 6, the widget is large enough already
-        if(embed.fields.length < 6) {
-            embed.addField("Total peak", decimal(playerData.totalPeak, 2, false, true), true);
+        if(embed.data.fields && embed.data.fields.length < 6) {
+            embed.addFields({name: "Total peak", value: decimal(playerData.totalPeak, 2, false, true), inline: true});
         }
     }
     return embed;
 }
 
-const onNewInteraction = async (interaction: CommandInteraction) => {    
+const onNewInteraction = async (interaction: ChatInputCommandInteraction) => {    
     var command = interaction.options.getString("app", true);
     const message = interaction.options.getString("comment", false);
     await interaction.deferReply();
@@ -156,7 +155,7 @@ const onNewInteraction = async (interaction: CommandInteraction) => {
         if(message) {
             const userPreamble = interaction.member ? `${interaction.member.user} said:\n` : ''; 
             options['content'] = `${userPreamble}> ${message}`;
-            await interaction.channel?.send(options as MessageOptions);
+            await interaction.channel?.send(options as MessageCreateOptions);
             return await interactionError(interaction, "Responding in public - I will delete this reply.");
         }
         
@@ -174,14 +173,14 @@ const plugin: InteractionPlugin & AutoCompletePlugin & MessagePlugin = {
       description: 'Searches the steam store and and displays relevant info',
       options: [
         {
-          type: 'STRING',
+          type: ApplicationCommandOptionType.String,
           name: 'app',
           description: 'Name of the app you\'re looking for',
           required: true,
           autocomplete: true
         },
         {
-            type: 'STRING',
+            type: ApplicationCommandOptionType.String,
             name: 'comment',
             description: 'Optional comment to give some context why you\'ve linking this',
             required: false,
@@ -215,7 +214,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin & MessagePlugin = {
             // ignored
         }
     },
-    async onNewInteraction(interaction: CommandInteraction) {
+    async onNewInteraction(interaction: ChatInputCommandInteraction) {
         await onNewInteraction(interaction);
     },
     async onAutoComplete(interaction: AutocompleteInteraction) {

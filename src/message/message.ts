@@ -113,7 +113,7 @@ export function onNewInteraction(interaction: Interaction) {
   }
 
   // complete command interactions
-  if(interaction.isCommand()) {
+  if(interaction.isChatInputCommand()) {
     tryInvoke(() => {
       plugins.interactions[interaction.commandName]?.onNewInteraction(interaction);
     })

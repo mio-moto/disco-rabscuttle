@@ -3,7 +3,7 @@ import {
   AutocompleteInteraction,
   ButtonInteraction,
   Client,
-  CommandInteraction,
+  ChatInputCommandInteraction,
 } from 'discord.js';
 import {Logger} from 'winston';
 import {Config} from '../config';
@@ -19,7 +19,7 @@ export type MessagePlugin = {
 
 export type InteractionPlugin = {
   descriptor: ApplicationCommandData;
-  onNewInteraction: (interaction: CommandInteraction) => Promise<void>;
+  onNewInteraction: (interaction: ChatInputCommandInteraction) => Promise<any>;
 } & BasePlugin;
 
 export type ButtonPlugin = {

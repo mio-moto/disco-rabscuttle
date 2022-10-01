@@ -1,4 +1,4 @@
-import {Client, CommandInteraction, Message} from 'discord.js';
+import {Client, ChatInputCommandInteraction, Message, ApplicationCommandOptionType} from 'discord.js';
 import {createWriteStream, readFile, WriteStream} from 'fs';
 import {InteractionPlugin, MessagePlugin} from '../../message/hooks';
 import loadConfig, {Config} from '../../config';
@@ -59,7 +59,7 @@ const plugin: InteractionPlugin & MessagePlugin & Preload = {
       {
         name: 'prompt',
         description: 'Ye, oh ye, let thy words be inspire the god bot',
-        type: 'STRING',
+        type: ApplicationCommandOptionType.String,
         required: false,
       },
     ],
@@ -75,7 +75,7 @@ const plugin: InteractionPlugin & MessagePlugin & Preload = {
 
     this.writeStream = createWriteStream(config.brainFile, {flags: 'a'});
   },
-  async onNewInteraction(interaction: CommandInteraction) {
+  async onNewInteraction(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
     const prompt = interaction.options.getString('prompt');
     if (prompt) {

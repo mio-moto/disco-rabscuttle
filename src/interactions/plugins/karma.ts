@@ -1,4 +1,4 @@
-import {ApplicationCommandData, Client, CommandInteraction} from 'discord.js';
+import {ApplicationCommandData, Client, ChatInputCommandInteraction, ApplicationCommandOptionType} from 'discord.js';
 import {writeFile, readFile} from 'fs';
 import {InteractionPlugin} from '../../message/hooks';
 import {Config} from '../../config';
@@ -104,7 +104,7 @@ const buildPlugin = (
   descriptor: ApplicationCommandData
 ): InteractionPlugin => ({
   descriptor: descriptor,
-  onNewInteraction: async (interaction: CommandInteraction) => {
+  onNewInteraction: async (interaction: ChatInputCommandInteraction) => {
     const username = interaction.options.getString('username');
     if (!username) {
       return;
@@ -128,7 +128,7 @@ const descriptors: ApplicationCommandData[] = [
       {
         name: 'username',
         description: 'Name of the user you want to display their karma for',
-        type: 'STRING',
+        type: ApplicationCommandOptionType.String,
         required: true,
       },
     ],
@@ -140,7 +140,7 @@ const descriptors: ApplicationCommandData[] = [
       {
         name: 'username',
         description: 'Name of the user you want to commend',
-        type: 'STRING',
+        type: ApplicationCommandOptionType.String,
         required: true,
       },
     ],
@@ -152,7 +152,7 @@ const descriptors: ApplicationCommandData[] = [
       {
         name: 'username',
         description: 'Name of the user you want to report',
-        type: 'STRING',
+        type: ApplicationCommandOptionType.String,
         required: true,
       },
     ],

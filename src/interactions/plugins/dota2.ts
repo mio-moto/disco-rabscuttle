@@ -1,4 +1,4 @@
-import {Client, CommandInteraction, MessageEmbed} from 'discord.js';
+import {Client, ChatInputCommandInteraction, EmbedBuilder, ApplicationCommandOptionType} from 'discord.js';
 import {existsSync, readFile, writeFile} from 'fs';
 import fetch from 'node-fetch';
 import {URLSearchParams} from 'url';
@@ -191,7 +191,7 @@ const getWorkshopSiteUri = (customGameId: string) =>
 let steamApiKey = '';
 
 const strategy = {
-  dp: async (name: string, interaction: CommandInteraction) => {
+  dp: async (name: string, interaction: ChatInputCommandInteraction) => {
     await interaction.deferReply();
 
     const searchRequest = await fetch(getSearchUrl(steamApiKey, name));
@@ -277,26 +277,25 @@ const strategy = {
 
     const trend = trendingText(currentRanking, yesterdayRanking);
 
-    const messageEmbed = new MessageEmbed()
+    const messageEmbed = new EmbedBuilder()
       .setColor(11402732)
       .setURL(getWorkshopSiteUri(customGameId))
       .setTitle(title)
       .setThumbnail(thumbnail)
-      .addField(
-        'Current Players',
-        `${playerCount.toLocaleString()} playing\n` +
+      .addFields({
+        name: 'Current Players',
+        value: `${playerCount.toLocaleString()} playing\n` +
           `${spectatorCount.toLocaleString()} ` +
           `spectating\n${lobbyPlayers.toLocaleString()} waiting in ` +
           `${lobbyCount.toLocaleString()} lobbies`,
-        true
-      )
-      .addField(
-        'Ranking',
-        `${trend}\n` +
+        inline: true
+      }, {
+        name: 'Ranking',
+        value: `${trend}\n` +
           `${decimal(subscriptions, 1, false, true)} subscribed\n` +
           `${decimal(favorited, 1, false, true)} favourited`,
-        true
-      );
+        inline: true
+      });
     return await interaction.followUp({embeds: [messageEmbed], ephemeral: false});
   },
 };
@@ -377,7 +376,7 @@ const plugin: InteractionPlugin = {
     description: 'Show the current dota players for a custom game name',
     options: [
       {
-        type: 'STRING',
+        type: ApplicationCommandOptionType.String,
         name: 'custom-game-name',
         description: 'Name of the custom game you want to view stats for.',
         required: true,
@@ -412,7 +411,7 @@ const plugin: InteractionPlugin = {
       setInterval(updateRanking, 86400000);
     });
   },
-  async onNewInteraction(interaction: CommandInteraction) {
+  async onNewInteraction(interaction: ChatInputCommandInteraction) {
     const name = interaction.options.getString('custom-game-name');
     if (!name) {
       return;
