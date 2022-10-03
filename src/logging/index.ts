@@ -2,7 +2,7 @@ import {createLogger, format, transports} from 'winston';
 
 export const loggerFactory = (prefix: string) =>
   createLogger({
-    level: 'info',
+    level: 'debug',
     format: format.combine(
       format.errors({stack: true}),
       format.splat(),

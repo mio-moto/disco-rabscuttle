@@ -6,6 +6,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "Node",
+    "types": ["node"],
     "target": "ESNext"
   },
   "include": ["src/**/*.ts", "test/**/*.ts"]
