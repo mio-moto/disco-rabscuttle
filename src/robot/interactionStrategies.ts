@@ -1,19 +1,20 @@
 import { APIApplicationCommandAutocompleteInteraction, APIApplicationCommandInteraction, APIInteractionResponseCallbackData, APIMessageComponentInteraction, APIModalSubmission, APIModalSubmitInteraction, APIPingInteraction, GatewayInteractionCreateDispatchData, InteractionType, MessageFlags } from "discord-api-types/v10";
 import logger from "../logging";
-import { createInteractionDefer, createInteractionResponse } from "./api-client";
+import { clientFactories } from "./api-client";
 import { TypedEvent } from "./eventEmitter";
 
+const { createInteractionResponse, deferInteractionResponse, deleteInteractionResponse,
+    editInteractionResponse, createInteractionFollowup, editInteractionFollowup,
+    deleteInteractionFollowup } = clientFactories.interactions;
 
 export type CommandInteraction = {
     type: InteractionType.ApplicationCommand;
     data: APIApplicationCommandInteraction;
     reply: ReturnType<typeof createInteractionResponse>;
-    defer: ReturnType<typeof createInteractionDefer>;
-    // followup: () => Promise<void>;
-    // delete: () => Promise<void>;
-
-
-    // functions
+    defer: ReturnType<typeof deferInteractionResponse>;
+    delete: ReturnType<typeof deleteInteractionResponse>;
+    edit: ReturnType<typeof editInteractionResponse>;
+    followup: ReturnType<typeof createInteractionFollowup>;
 }
 
 export type AutocompleteInteraction = {
@@ -58,8 +59,11 @@ export const handleInteraction = (interaction: GatewayInteractionCreateDispatchD
             interactionBus.onCommand.emit({
                 type: interaction.type,
                 data: interaction,
-                defer: createInteractionDefer(interaction),
+                defer: deferInteractionResponse(interaction),
                 reply: createInteractionResponse(interaction),
+                edit: editInteractionResponse(interaction),
+                delete: deleteInteractionResponse(interaction),
+                followup: createInteractionFollowup(interaction)
             });
             break;
         case InteractionType.ApplicationCommandAutocomplete:

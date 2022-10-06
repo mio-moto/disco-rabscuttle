@@ -109,18 +109,18 @@ const bootstrap = async (config: Config) => {
         const appId = readyEvent.application.id;
         const token = config.token;
 
-        const response = await registerCommand(appId, token, {
+        const response = await registerCommand(appId, { token: token }, {
             name: "blep",
             type: ApplicationCommandType.ChatInput,
             description: "This is a test registration to check my typings, bazinga"
         });
 
-        const wsp = await registerCommand(appId, token, {
+        const wsp = await registerCommand(appId, { token: token }, {
             name: "bleagh",
             type: ApplicationCommandType.User,
         });
 
-        const rsp = await registerCommand(appId, token, {
+        const rsp = await registerCommand(appId, { token: token }, {
             name: "eargh",
             type: ApplicationCommandType.Message
         });
