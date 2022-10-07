@@ -1,13 +1,11 @@
-import { GatewayDispatchPayload, GatewayDispatchEvents, GatewayReadyDispatchData,
-    GatewayInteractionCreateDispatchData, GatewayUserUpdateDispatchData, GatewayGuildMemberUpdateDispatchData,
-    GatewayThreadMemberUpdateDispatchData, GatewayThreadMembersUpdate, GatewayMessageUpdateDispatchData,
-    GatewayMessageDeleteDispatchData, GatewayMessageDeleteBulkDispatchData, GatewayMessageReactionAddDispatchData,
-    GatewayMessageReactionRemoveDispatchData, GatewayMessageReactionRemoveEmojiDispatchData,
-    GatewayMessageCreateDispatchData,
-    Snowflake } from "discord-api-types/v10";
-import logger from "../logging";
-import { TypedEvent } from "./eventEmitter";
-import { GatewayClient } from "./sendCommands";
+import { GatewayDispatchPayload, GatewayDispatchEvents, Snowflake } from "discord-api-types/v10";
+import logger from "../../logging";
+import { GatewayReady, InteractionCreate, UserUpdate,
+    GuildMemberUpdate, ThreadMemberUpdate, ThreadMembersUpdate,
+    MessageCreate, MessageUpdate, MessageDelete,
+    MessageDeleteBulk, MessageReactionAdd, MessageReactionRemove,
+    MessageReactionRemoveEmoji, MessageReactionRemoveAll } from "../alias";
+import { TypedEvent } from "../systems/event-emitter";
 
 export const handleDispatch = (eventBus: GatewayEventBus, message: GatewayDispatchPayload) => {
     switch (message.t) {
@@ -56,15 +54,15 @@ export const handleDispatch = (eventBus: GatewayEventBus, message: GatewayDispat
             break;
 
         default:
-            logger.debug(`Unhandled event type: ${message.t}  (${JSON.stringify(message.d)})`)
+            logger.debug(`Unhandled event type: ${message.t}`); //  (${JSON.stringify(message.d)})
 
     }
 
-    logger.debug(`>>> ${message.op} - ${message.s} - ${message.t}`);
+    // logger.debug(`>>> ${message.op} - ${message.s} - ${message.t}`);
 }
 
 // the compiler breaks when this message is declared as interface, idk why, but here's a copy-paste
-type MessageReactionRemoveData = {
+export type MessageReactionRemoveData = {
     /**
      * The id of the channel
      */
@@ -80,23 +78,24 @@ type MessageReactionRemoveData = {
 }
 export type GatewayMessageReactionRemoveAllDispatchData = MessageReactionRemoveData;
 
-export const createDispatchEventBus = () => ({
-    onReady: new TypedEvent<GatewayReadyDispatchData>(),
-    onInteractionCreate: new TypedEvent<GatewayInteractionCreateDispatchData>(),
-    onUserUpdate: new TypedEvent<GatewayUserUpdateDispatchData>(),
-    onGuildMemberUpdate: new TypedEvent<GatewayGuildMemberUpdateDispatchData>(),
-    onThreadMemberUpdate: new TypedEvent<GatewayThreadMemberUpdateDispatchData>(),
-    onThreadMembersUpdate: new TypedEvent<GatewayThreadMembersUpdate>(),
-    onMessageCreate: new TypedEvent<GatewayMessageCreateDispatchData>(),
-    onMessageUpdate: new TypedEvent<GatewayMessageUpdateDispatchData>(),
-    onMessageDelete: new TypedEvent<GatewayMessageDeleteDispatchData>(),
-    onMessageDeleteBulk: new TypedEvent<GatewayMessageDeleteBulkDispatchData>(),
-    onMessageReactionAdd: new TypedEvent<GatewayMessageReactionAddDispatchData>(),
-    onMessageReactionRemove: new TypedEvent<GatewayMessageReactionRemoveDispatchData>(),
-    // onMRRA: new TypedEvent<sadlkjglk>(),
-    onMessageReactionRemoveEmoji: new TypedEvent<GatewayMessageReactionRemoveEmojiDispatchData>(),
-    onMessageReactionRemoveAll: new TypedEvent<GatewayMessageReactionRemoveAllDispatchData>()
 
+
+
+export const createDispatchEventBus = () => ({
+    onReady: new TypedEvent<GatewayReady>(),
+    onInteractionCreate: new TypedEvent<InteractionCreate>(),
+    onUserUpdate: new TypedEvent<UserUpdate>(),
+    onGuildMemberUpdate: new TypedEvent<GuildMemberUpdate>(),
+    onThreadMemberUpdate: new TypedEvent<ThreadMemberUpdate>(),
+    onThreadMembersUpdate: new TypedEvent<ThreadMembersUpdate>(),
+    onMessageCreate: new TypedEvent<MessageCreate>(),
+    onMessageUpdate: new TypedEvent<MessageUpdate>(),
+    onMessageDelete: new TypedEvent<MessageDelete>(),
+    onMessageDeleteBulk: new TypedEvent<MessageDeleteBulk>(),
+    onMessageReactionAdd: new TypedEvent<MessageReactionAdd>(),
+    onMessageReactionRemove: new TypedEvent<MessageReactionRemove>(),
+    onMessageReactionRemoveEmoji: new TypedEvent<MessageReactionRemoveEmoji>(),
+    onMessageReactionRemoveAll: new TypedEvent<MessageReactionRemoveAll>()
 });
 
 export type GatewayEventBus = ReturnType<typeof createDispatchEventBus>;

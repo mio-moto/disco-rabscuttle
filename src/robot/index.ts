@@ -1,74 +1,28 @@
+import { createClient } from "./clients";
+
+export * from './alias';
+export default createClient;
+
+
+
+
+/* 
 import { ApplicationCommandType, GatewayIntentBits, GatewayOpcodes, GatewayReceivePayload, InteractionType } from 'discord-api-types/v10';
 import logger from '../logging';
 import { createStateMachine } from './statemachine';
-import { createGatewayHandler } from './gatewayStrategies';
-import { createGatewayClient, GatewayClient } from './sendCommands';
-import createWebsocket from './websocket';
-import { registerCommand } from './api-client';
-import { createInteractionBus } from './interactionStrategies';
+import { createGatewayHandler } from './strategies/gatewayStrategies';
+import { createGatewayClient } from './sendCommands';
+import { registerCommand } from './clients/rest-client';
 import loadConfig, { Config } from '../config';
+import { GatewayClient } from './alias';
+import { createWebsocket } from './clients/websocket-client';
+import { createGatewayStatemachine } from './client';
 
 
-
-const createGatewayStatemachine = (client: GatewayClient, config: Config) => {
-    // @todo: does not understand or handle any form disconnect/reconnect
-    const stateMachine = createStateMachine<GatewayOpcodes>(-1, {
-        name: 'connection init',
-        enter: () => { },
-        exit: () => { }
-    })
-
-    const initialConnection = stateMachine.currentHandler;
-    const postHello = {
-        name: 'hello received',
-        enter: () => {
-            logger.info("Hello event received, identifying now.");
-            client.sendIdentification(config.token, 
-                [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildWebhooks],
-                'rabscuttle'
-            );
-        },
-        exit: () => { }
-    };
-
-    const postIdent = {
-        name: 'identified & ready',
-        enter: () => {
-            logger.info('Identification received, registering test command');
-
-        },
-        exit: () => { }
-    };
-
-    stateMachine.register(initialConnection, postHello, GatewayOpcodes.Hello);
-    stateMachine.register(postHello, postIdent, GatewayOpcodes.Dispatch);
-    return stateMachine;
-}
-
-const spinup = async (config: Config) => {
-    const lastOpcodes: GatewayOpcodes[] = [];
-    const [ websocketConnection, websocket ] = createWebsocket();
-    const client = createGatewayClient(websocket);
-    const clientHandler = createGatewayHandler(client);
-    const gatewayStateMachine = createGatewayStatemachine(client, config);
-
-    // @todo: clean this up
-    websocket.removeAllListeners('message');
-    websocket.on('message', (data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) => {
-        const message = JSON.parse(data.toString()) as GatewayReceivePayload;
-        gatewayStateMachine.transition(message.op);
-        if(clientHandler.handleGatewayEvent(message)) {
-            return;
-        }
-    });
-
-    
-    await websocketConnection;
-    return clientHandler;
-}
 
 const bootstrap = async (config: Config) => {
     const { eventBus, interactionBus } = await spinup(config);
+
 
     interactionBus.onCommand.on(async (x) => {
         const commandName = x.data.data.name;
@@ -81,6 +35,18 @@ const bootstrap = async (config: Config) => {
         
     })
 
+    eventBus.onMessageCreate.on(async (message) => {
+//        logger.info(`<${message.author.username}> ${message.content}`);
+//        
+//        logger.debug(JSON.stringify(message))
+//
+//        const content = await getMessage(message.channel_id, message.id, {token: config.token});
+//        if(content.success) {
+//            // logger.debug(JSON.stringify(message));
+//            logger.debug(`<${message.author.username}> ${content.message.content}`);
+//        }
+        
+    })
     eventBus.onInteractionCreate.on((interaction) => {
         switch(interaction.type) {
             case InteractionType.ApplicationCommand:
@@ -131,3 +97,4 @@ const bootstrap = async (config: Config) => {
 const config = loadConfig();
 bootstrap(config);
 
+*/

@@ -1,13 +1,14 @@
-import { RouteBases, Routes as DiscordRoutes } from 'discord-api-types/rest/v10';
-import { APIApplicationCommand, APIApplicationCommandAutocompleteResponse, APIApplicationCommandInteraction, APIApplicationCommandOptionChoice, APIApplicationCommandSubcommandGroupOption, APICommandAutocompleteInteractionResponseCallbackData, APIInteractionResponse, APIInteractionResponseCallbackData, APIInteractionResponseChannelMessageWithSource, APIInteractionResponseDeferredChannelMessageWithSource, APIInteractionResponseDeferredMessageUpdate, APIInteractionResponsePong, APIInteractionResponseUpdateMessage, APIModalInteractionResponse, APIModalInteractionResponseCallbackData, ApplicationCommandType, InteractionResponseType, InteractionType, MessageFlags, RESTError, RESTGetAPIWebhookWithTokenMessageResult, RESTPatchAPIInteractionFollowupResult, RESTPatchAPIInteractionOriginalResponseJSONBody, RESTPatchAPIWebhookWithTokenResult, RESTPostAPIApplicationCommandsJSONBody, RESTPostAPIApplicationCommandsResult, RESTPostAPIInteractionCallbackFormDataBody, RESTPostAPIInteractionCallbackJSONBody, RESTPostAPIInteractionFollowupResult, RESTPostAPIWebhookWithTokenJSONBody, RESTPostAPIWebhookWithTokenResult, RESTPostAPIWebhookWithTokenWaitResult, Snowflake } from 'discord-api-types/v10';
+import { RESTPatchAPICurrentUserJSONBody, RESTPatchAPICurrentUserResult, RouteBases, Routes as DiscordRoutes } from 'discord-api-types/rest/v10';
+import { APIApplicationCommand, APIApplicationCommandAutocompleteInteraction, APIApplicationCommandAutocompleteResponse, APIApplicationCommandInteraction, APIApplicationCommandOptionChoice, APIApplicationCommandSubcommandGroupOption, APICommandAutocompleteInteractionResponseCallbackData, APIInteraction, APIInteractionResponse, APIInteractionResponseCallbackData, APIInteractionResponseChannelMessageWithSource, APIInteractionResponseDeferredChannelMessageWithSource, APIInteractionResponseDeferredMessageUpdate, APIInteractionResponsePong, APIInteractionResponseUpdateMessage, APIModalInteractionResponse, APIModalInteractionResponseCallbackData, ApplicationCommandType, InteractionResponseType, InteractionType, MessageFlags, RESTError, RESTGetAPIChannelMessageResult, RESTGetAPIWebhookWithTokenMessageResult, RESTPatchAPIInteractionFollowupResult, RESTPatchAPIInteractionOriginalResponseJSONBody, RESTPatchAPIWebhookWithTokenResult, RESTPostAPIApplicationCommandsJSONBody, RESTPostAPIApplicationCommandsResult, RESTPostAPIInteractionCallbackFormDataBody, RESTPostAPIInteractionCallbackJSONBody, RESTPostAPIInteractionFollowupResult, RESTPostAPIWebhookWithTokenJSONBody, RESTPostAPIWebhookWithTokenResult, RESTPostAPIWebhookWithTokenWaitResult, Snowflake } from 'discord-api-types/v10';
 import fetch, { RequestInit, Response } from 'node-fetch';
-import logger from '../logging';
+import logger from '../../logging';
+import { DiscordClient } from '../alias';
 
 
 const createRoute = (endpoint: string) => `${RouteBases.api}${endpoint}`;
 
-type EmptyResponse = RESTRequest & (SuccessfulEmptyResponse | FailureResponse);
-type PayloadResponse<T> = RESTRequest & (SuccessfulBodyResponse<T> | FailureResponse);  
+export type EmptyResponse = RESTRequest & (SuccessfulEmptyResponse | FailureResponse);
+export type PayloadResponse<T> = RESTRequest & (SuccessfulBodyResponse<T> | FailureResponse);  
 
 
 type RESTRequest = {
@@ -63,14 +64,12 @@ const bodyResponse = async <T>(response: Response, ...expectedStatus: number[]):
 const bodylessHTTPMethods = ['GET', 'HEAD', 'DELETE'] as const;
 const bodiedHTTPMethods = ['POST', 'PUT', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'] as const;
 const httpMethods = [...bodylessHTTPMethods, ...bodiedHTTPMethods] as const;
-type BodylessHTTPMethods = typeof bodylessHTTPMethods[number];
-type BodiedHTTPMethods = typeof bodiedHTTPMethods[number];
-type HTTPMethods = typeof httpMethods[number];
-type Authorization = {
-    bearer: string
-} | {
-    token: string
-};
+export type BodylessHTTPMethods = typeof bodylessHTTPMethods[number];
+export type BodiedHTTPMethods = typeof bodiedHTTPMethods[number];
+export type HTTPMethods = typeof httpMethods[number];
+export type BotAuthorization = { token: string };
+export type BearerAuthorization = { bearer: string }
+export type Authorization = BotAuthorization | BearerAuthorization;
 
 type RequestHeaders =  {[k: string]: string};
 
@@ -143,7 +142,7 @@ function buildResponse<V extends InteractionResponseType>(type: V, data: Conditi
     })
 }
 
-const interactionResponseT = <V extends InteractionResponseType>(interaction: APIApplicationCommandInteraction, type: V) => {
+const interactionResponseT = <V extends InteractionResponseType>(interaction: APIInteraction, type: V) => {
     return async (data: ConditionalDataType<V>) => {
         const url = createRoute(DiscordRoutes.interactionCallback(interaction.id, interaction.token));
         const interactionBody = buildResponse(type, data)
@@ -157,7 +156,7 @@ const messageResponse = (interaction: APIApplicationCommandInteraction) => inter
 const deferMessage = (interaction: APIApplicationCommandInteraction) => interactionResponseT<InteractionResponseType.DeferredChannelMessageWithSource>(interaction, InteractionResponseType.DeferredChannelMessageWithSource);
 const updateDefferedMessage = (interaction: APIApplicationCommandInteraction) => interactionResponseT<InteractionResponseType.DeferredMessageUpdate>(interaction, InteractionResponseType.DeferredMessageUpdate);
 const updateResponse = (interaction: APIApplicationCommandInteraction) => interactionResponseT<InteractionResponseType.UpdateMessage>(interaction, InteractionResponseType.UpdateMessage);
-const autocompleteResponse = (interaction: APIApplicationCommandInteraction) => interactionResponseT<InteractionResponseType.ApplicationCommandAutocompleteResult>(interaction, InteractionResponseType.ApplicationCommandAutocompleteResult);
+const autocompleteResponse = (interaction: APIApplicationCommandAutocompleteInteraction) => interactionResponseT<InteractionResponseType.ApplicationCommandAutocompleteResult>(interaction, InteractionResponseType.ApplicationCommandAutocompleteResult);
 const modalResponse = (interaction: APIApplicationCommandInteraction) => interactionResponseT<InteractionResponseType.Modal>(interaction, InteractionResponseType.Modal);
 
 
@@ -206,28 +205,51 @@ const deleteInteraction = (interaction: APIApplicationCommandInteraction, messag
 
 
 export const clientFactories = {
-    interactions: {
+    commands: {
+        // reply handling
         deferInteractionResponse: deferInteraction,
         createInteractionResponse: messageResponse,
         editInteractionResponse: (interaction: APIApplicationCommandInteraction) => editInteraction<RESTPatchAPIInteractionOriginalResponseJSONBody>(interaction, '@original'),
         deleteInteractionResponse: (interaction: APIApplicationCommandInteraction) => deleteInteraction(interaction, '@original'),
-
+        // followup handling
         createInteractionFollowup: createFollowup,
         editInteractionFollowup: (interaction: APIApplicationCommandInteraction, messageId: Snowflake) => editInteraction<RESTPatchAPIInteractionFollowupResult>(interaction, messageId),
         deleteInteractionFollowup: (interaction: APIApplicationCommandInteraction, messageId: Snowflake) => deleteInteraction(interaction, messageId)
+    },
+    autocomplete: {
+        createAutocompleteResponse: autocompleteResponse
     }
 }
 
+export const createRestClient = (authorization: Authorization) => ({
+    registerCommand: (applicationId: Snowflake, definition: RESTPostAPIApplicationCommandsJSONBody) => registerCommand(applicationId, authorization, definition),
+    getMessage: (channelId: Snowflake, messageId: Snowflake) => getMessage(channelId, messageId, authorization),
+    modifyUser: (userInfo: RESTPatchAPICurrentUserJSONBody) => modifyUser(userInfo, authorization),
+    
+    ...clientFactories
+})
 
 export const registerCommand = async (applicationId: Snowflake, authorization: Authorization, definition: RESTPostAPIApplicationCommandsJSONBody) => {
     const url = createRoute(DiscordRoutes.applicationCommands(applicationId));
     const response = await createBodiedRequest(url, 'POST', definition, authorization);
-    const result = await bodyResponse<RESTPostAPIApplicationCommandsResult>(response, 200);
+    const result = await bodyResponse<RESTPostAPIApplicationCommandsResult>(response, 200, 201);
     if(result.success) {
         // this debug log doesn't belong here, I think
-        logger.debug(`registered command, reply was: ${JSON.stringify(result.message)}`);
+        logger.debug(`registered command '${result.message.name}'`);
     } else {
         logger.debug(`registration failed, error code [${result.response.status}] reply was: ${JSON.stringify(result.error)}`)
     }
     return result;
+}
+
+export const getMessage = async (channelId: Snowflake, messageId: Snowflake, authorization: Authorization) => {
+    const url = createRoute(DiscordRoutes.channelMessage(channelId, messageId));
+    const response = await createBodylessRequest(url, 'GET', authorization);
+    return await bodyResponse<RESTGetAPIChannelMessageResult>(response, 200);
+}
+
+export const modifyUser = async (userInfo: RESTPatchAPICurrentUserJSONBody, authorization: Authorization) => {
+    const url = createRoute(DiscordRoutes.user());
+    const response = await createBodiedRequest(url, 'PATCH', authorization);
+    return await bodyResponse<RESTPatchAPICurrentUserResult>(response, 200);
 }

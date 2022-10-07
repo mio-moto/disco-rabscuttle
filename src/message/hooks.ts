@@ -1,16 +1,12 @@
-import {
-  ApplicationCommandData,
-  AutocompleteInteraction,
-  ButtonInteraction,
-  Client,
-  ChatInputCommandInteraction,
-} from 'discord.js';
+import { APIApplicationCommand, APIApplicationCommandInteractionData, ApplicationCommandType, RESTPostAPIChatInputApplicationCommandsJSONBody } from 'discord-api-types/v10';
 import {Logger} from 'winston';
 import {Config} from '../config';
+import { DiscordClient } from '../robot';
+import { AutocompleteInteraction, CommandInteraction, ModalInteraction } from '../robot/strategies/interaction-strategies';
 import {MessageCallback} from './message';
 
 export type BasePlugin = {
-  onInit?: (client: Client, config: Config, logger: Logger) => Promise<void>;
+  onInit?: (client: DiscordClient, config: Config, logger: Logger) => Promise<void>;
 };
 
 export type MessagePlugin = {
@@ -18,15 +14,15 @@ export type MessagePlugin = {
 } & BasePlugin;
 
 export type InteractionPlugin = {
-  descriptor: ApplicationCommandData;
-  onNewInteraction: (interaction: ChatInputCommandInteraction) => Promise<any>;
+  descriptor: RESTPostAPIChatInputApplicationCommandsJSONBody ;
+  onNewInteraction: (interaction: CommandInteraction) => Promise<any>;
 } & BasePlugin;
 
 export type ButtonPlugin = {
-  onNewButtonClick: (interaction: ButtonInteraction) => Promise<void>;
+  onNewButtonClick: (interaction: ModalInteraction) => Promise<void>;
 } & BasePlugin;
 
 export type AutoCompletePlugin = {
-  descriptor: ApplicationCommandData;
+  descriptor: RESTPostAPIChatInputApplicationCommandsJSONBody ;
   onAutoComplete: (interaction: AutocompleteInteraction) => Promise<void>;
 } & BasePlugin;

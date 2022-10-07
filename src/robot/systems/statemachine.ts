@@ -1,4 +1,4 @@
-import { loggerFactory } from "../logging";
+import { loggerFactory } from "../../logging";
 
 export type EventType = { };
 export type TransitionEnterAction = (from: Handler, event: EventType) => any;

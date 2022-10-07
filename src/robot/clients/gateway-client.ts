@@ -1,6 +1,8 @@
-import { GatewayHeartbeat, GatewayIdentify, GatewayIntentBits, GatewayOpcodes, GatewaySendPayload } from "discord-api-types/v10";
+import { GatewayHeartbeat, GatewayIdentify, GatewayIntentBits, GatewayOpcodes, GatewaySendPayload, GatewayUpdatePresence } from "discord-api-types/v10";
+import { send } from "process";
 import WebSocket from "ws";
-import logger from '../logging';
+import logger from '../../logging';
+import { Presence } from "../alias";
 
 
 type SendAction = (payload: GatewaySendPayload) => any;
@@ -26,8 +28,8 @@ const sendIdentificationImpl = (send: SendAction, token: string, intents: Gatewa
         throw new Error('Intents cannot be empty');
     }
     let intentNumber = 0;
-    intents.forEach(intent => intentNumber &= 1 << intent)
-    
+    intents.forEach(intent => intentNumber |= intent)
+    logger.debug(`Intent: ${intentNumber}`)
     const identifyMessage: GatewayIdentify = {
         op: GatewayOpcodes.Identify,
         d: {
@@ -37,24 +39,33 @@ const sendIdentificationImpl = (send: SendAction, token: string, intents: Gatewa
                 browser: name,
                 device: name
             },
-            intents: 1 << GatewayIntentBits.Guilds & 1 << GatewayIntentBits.GuildMessages & 1 << GatewayIntentBits.GuildWebhooks
+            intents: intentNumber
         }
     }
     logger.debug(`Sending identify with [${intents.length}] intents, as service name '${name}'`);
     send(identifyMessage);
 }
 
+const sendUpdatePresence = (send: SendAction, presence: Presence) => {
+    const data: GatewayUpdatePresence = {
+        op: GatewayOpcodes.PresenceUpdate,
+        d: presence
+    };
+    send(data);
+}
+
 export const createGatewayClient = (websocket: WebSocket) => {
     const sendGatewayMessage = (payload: GatewaySendPayload) => websocket.send(JSON.stringify(payload));
     const sendHeartbeat = createHeartbeatImpl(sendGatewayMessage);
     const sendIdentification = (token: string, intents: GatewayIntentBits[], name: string) => sendIdentificationImpl(sendGatewayMessage, token, intents, name)
+    const updatePresence = (presence: Presence) => sendUpdatePresence(sendGatewayMessage, presence);
 
     return {
         websocket: websocket,
         sendGatewayMessage: sendGatewayMessage,
         sendHeartbeat: sendHeartbeat,
-        sendIdentification: sendIdentification
+        sendIdentification: sendIdentification,
+        updatePresence: updatePresence
     }
 }
 
-export type GatewayClient = ReturnType<typeof createGatewayClient>;

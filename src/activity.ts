@@ -1,4 +1,5 @@
-import {ActivityType, ClientUser} from 'discord.js';
+import { ActivityType, PresenceUpdateStatus } from 'discord-api-types/v10';
+import { DiscordClient, GatewayClient, RestClient } from './robot';
 import { tryInvoke } from './utils';
 
 export type ClientStatus = {
@@ -9,25 +10,33 @@ export type ClientStatus = {
 const random = (stuff: any[]) =>
   stuff[Math.floor(Math.random() * stuff.length)];
 
-const setUsername = (user: ClientUser, usernames: string[]) => tryInvoke(() => user.setUsername(random(usernames)));
+const setUsername = (rest: RestClient, usernames: string[]) => tryInvoke(() => rest.modifyUser({ username: random(usernames)}));
 
-const setStatus = (user: ClientUser,statusCollection: ClientStatus[]) => {
+const setStatus = (gateway: GatewayClient ,statusCollection: ClientStatus[]) => {
   const status = random(statusCollection);
-  tryInvoke(() => user.setActivity(status.statusText, {type: status.statusType}));
+  tryInvoke(() => gateway.updatePresence({
+    since: null,
+    status: PresenceUpdateStatus.Online,
+    afk: false,
+    activities: [{
+      name: status.statusText,
+      type: status.statusType
+    }]
+  }));
 };
 
-const updateUserProfile = (user: ClientUser, statusCollection: ClientStatus[], usernames: string[]) => {
-  setStatus(user, statusCollection);
-  setUsername(user, usernames);
+const updateUserProfile = (client: DiscordClient, statusCollection: ClientStatus[], usernames: string[]) => {
+  setStatus(client.gateway, statusCollection);
+  setUsername(client.restClient, usernames);
 }
 
 export const enableActivitySelector = async (
-  user: ClientUser,
+  client: DiscordClient,
   statusCollection: ClientStatus[],
   usernames: string[],
   rotationTimeInMs = 45 * 60 * 1000
 ) => {
-  setStatus(user, statusCollection);
+  setStatus(client.gateway, statusCollection);
   await new Promise(resolve => setTimeout(resolve, 2000));
-  setInterval(updateUserProfile, rotationTimeInMs, user, statusCollection, usernames);
+  setInterval(updateUserProfile, rotationTimeInMs, client, statusCollection, usernames);
 };

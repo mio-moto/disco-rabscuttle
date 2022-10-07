@@ -1,4 +1,3 @@
-import {Client} from 'discord.js';
 import {Config} from '../config';
 import DotaCustoms from './plugins/dota2';
 import CryptoTicker from './plugins/crypto';
@@ -17,6 +16,7 @@ import {
   ReportInteraction,
 } from './plugins/karma';
 import {loggerFactory} from '../logging';
+import { DiscordClient } from '../robot';
 // import { EvilButtonPlugin } from './plugins/evilButton';
 
 const interactions = [
@@ -35,7 +35,7 @@ const interactions = [
   WikiSearch
 ];
 
-export default function bindInteractions(client: Client, config: Config) {
+export default function bindInteractions(client: DiscordClient, config: Config) {
   const robotLogger = loggerFactory("Robot");
   /*
   Robot.register(EvilButtonPlugin);
@@ -44,9 +44,7 @@ export default function bindInteractions(client: Client, config: Config) {
   }
   */
   interactions.forEach(x => {
-    client.guilds.cache.forEach(async y => {
-      y.commands.create(x.descriptor);
-    });
+    client.restClient.registerCommand(x.descriptor);
     Robot.register(x);
     if (x.onInit) {
       const logger = loggerFactory(x.descriptor.name);

@@ -1,6 +1,7 @@
-import {Client, ChatInputCommandInteraction} from 'discord.js';
 import {InteractionPlugin} from '../../message/hooks';
 import {Config} from '../../config';
+import { CommandInteraction } from '../../robot/strategies/interaction-strategies';
+import { DiscordClient } from '../../robot';
 
 const tools = [
   'JS',
@@ -390,15 +391,15 @@ function response(): string {
 let lastInvoke = new Date(1900, 1);
 let botname = '';
 
-async function bark(interaction: ChatInputCommandInteraction) {
+async function bark(interaction: CommandInteraction) {
   const time = (new Date().getTime() - lastInvoke.getTime()) / 1000;
   if (time < 60) {
     return;
   }
 
-  const username = interaction.member?.user.username?.toString() ?? '';
-  const random = interaction.guild?.members.cache.random()?.toString() ?? '';
-  await interaction.reply(setNames(response(), username, random, botname));
+  const username = interaction.data.member?.user.username?.toString() ?? '';
+  // const random = interaction.data.guild?.members.cache.random()?.toString() ?? '';
+  await interaction.reply({ content: setNames(response(), username, "random", botname)});
   lastInvoke = new Date();
 }
 
@@ -407,8 +408,8 @@ const plugin: InteractionPlugin = {
     name: 'bark',
     description: 'Randomized rudeness from a robot.',
   },
-  onInit: async (client: Client, _: Config) => {
-    botname = client.user?.toString() || '';
+  onInit: async (client: DiscordClient, _: Config) => {
+    botname = ''; // client.user?.toString() || '';
   },
   onNewInteraction: bark,
 };

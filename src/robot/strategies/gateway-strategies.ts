@@ -1,8 +1,8 @@
-import { GatewayOpcodes, GatewayHello, GatewayReceivePayload, GatewayHeartbeatAck, GatewayInvalidSession, Snowflake } from "discord-api-types/v10"
-import logger from '../logging';
-import { createDispatchEventBus, handleDispatch } from "./dispatchStrategies";
-import { createInteractionBus, handleInteraction } from "./interactionStrategies";
-import { GatewayClient } from "./sendCommands";
+import { GatewayOpcodes, GatewayHello, GatewayReceivePayload, GatewayHeartbeatAck, GatewayInvalidSession } from "discord-api-types/v10"
+import logger from "../../logging";
+import { GatewayClient } from "../alias";
+import { createDispatchEventBus, handleDispatch } from "./dispatch-strategies";
+import { createInteractionBus, handleInteraction } from "./interaction-strategies";
 
 
 function isNumber(value: any | null | undefined): value is Number {
@@ -32,23 +32,6 @@ const handleHeartbeatAck = (client: GatewayClient, message: GatewayHeartbeatAck)
 const handleInvalidSession = (client: GatewayClient, message: GatewayInvalidSession) => {
     logger.error(`Closing websocket, this is an invalid session: resumable: ${message.d}`);
     client.websocket.close();
-}
-
-// @todo: using the type-defs spazzes out vscode (but not the compiler?)
-// actual name: GatewayMessageReactionRemoveAllDispatchData
-interface GatewayMessageReactionRemoveAllDispatchData {
-    /**
-     * The id of the channel
-     */
-    channel_id: Snowflake;
-    /**
-     * The id of the message
-     */
-    message_id: Snowflake;
-    /**
-     * The id of the guild
-     */
-    guild_id?: Snowflake;
 }
 
 export const createGatewayHandler = (client: GatewayClient) => {
@@ -88,4 +71,3 @@ export const createGatewayHandler = (client: GatewayClient) => {
     }
 }
 
-export type GatewayHandler = ReturnType<typeof createGatewayHandler>;

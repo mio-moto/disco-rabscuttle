@@ -1,10 +1,11 @@
-import { Interaction, Message as DiscordMessage } from 'discord.js';
+import { InteractionType } from 'discord-api-types/v10';
 import { Config } from '../config';
 import { loggerFactory } from '../logging';
+import { Interaction, MessageCreate } from '../robot';
 import { AutoCompletePlugin, ButtonPlugin, InteractionPlugin, MessagePlugin } from './hooks';
 
 export interface MessageCallback {
-  (message: DiscordMessage): void;
+  (message: MessageCreate): void;
 }
 const logger = loggerFactory('Plugins');
 
@@ -76,7 +77,7 @@ export function setup(config: Config) {
   botConfig = config;
 }
 
-export function onNewMessage(discordMessage: DiscordMessage) {
+export function onNewMessage(discordMessage: MessageCreate) {
   // reject messages from the bot himself.
   if (discordMessage.author.id === botConfig?.userId) {
     return;
@@ -101,22 +102,15 @@ const tryInvoke = (action: () => void) => {
 
 export function onNewInteraction(interaction: Interaction) {
   // commands can allow for auto-complete
-  if(interaction.isAutocomplete()) {
-    tryInvoke(() => plugins.autocompletes[interaction.commandName]?.onAutoComplete(interaction));
-    return;
-  }
-  
-  // button interactions (when the bot sent out a bunch of buttons and they get clicked)
-  if(interaction.isButton()) {
-    plugins.buttons.forEach(x => tryInvoke(() => x.onNewButtonClick(interaction)))
-    return;
-  }
-
-  // complete command interactions
-  if(interaction.isChatInputCommand()) {
-    tryInvoke(() => {
-      plugins.interactions[interaction.commandName]?.onNewInteraction(interaction);
-    })
-    return;
+  switch(interaction.type) {
+    case InteractionType.ApplicationCommandAutocomplete:
+      tryInvoke(() => plugins.autocompletes[interaction.data.data.name]?.onAutoComplete(interaction));
+      return;
+    case InteractionType.ModalSubmit:
+      plugins.buttons.forEach(x => tryInvoke(() => x.onNewButtonClick(interaction)))
+      return;
+    case InteractionType.ApplicationCommand:
+      tryInvoke(() => plugins.interactions[interaction.data.data.name]?.onNewInteraction(interaction));
+      return;
   }
 }

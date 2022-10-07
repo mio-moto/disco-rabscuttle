@@ -3,6 +3,7 @@ import { ClientRequest, IncomingMessage } from 'http';
 import WebSocket from 'ws';
 
 import zlib from 'zlib'
+import logger from '../../logging';
 
 
 // assumed from: https://discord.com/developers/docs/topics/gateway#connecting
@@ -25,19 +26,19 @@ type WebsocketMessage = {
     'data': Buffer[]
 }
 
-const VoidCallback = (type: string) => (_?: any, __?: any) => { console.log(`>>> ${type}: \n${JSON.stringify(_)} - ${JSON.stringify(__)}`) }
+const VoidCallback = (type: string) => (_?: any, __?: any) => { logger.debug(`>>> ${type}: \n${JSON.stringify(_)} - ${JSON.stringify(__)}`) }
 
 export const DefaultWebsocketCallbacks: WebsocketCallbacks = {
     close: () => { console.log('> Websocket closed.') },
     error: VoidCallback('error'),
     message: (data, isBinary) => {
         if(Array.isArray(data)) {
-            console.error(`No Websocket Buffer[] handler`)
+            logger.error(`No Websocket Buffer[] handler`)
             return;
         }
 
-        const payload = JSON.parse(data.toString());
-        console.log(`>>> message: ${JSON.stringify(payload)}\n`);
+        // const payload = JSON.parse(data.toString());
+        // console.log(`>>> message: ${JSON.stringify(payload)}\n`);
     },
     open: () => { console.log('> Websocket opened.') },
     ping: VoidCallback('ping'),
@@ -72,7 +73,7 @@ const generateGatewayConfig = (gatewayParameters: GatewayURLQuery) => {
     return uri;
 }
 
-const createWebsocket = (url: URL, websocketCallbacks: WebsocketCallbacks) => {
+const initWebsocket = (url: URL, websocketCallbacks: WebsocketCallbacks) => {
     const ws = new WebSocket(url, { perMessageDeflate: true });
     ws.on('open', websocketCallbacks.open);
     ws.on('message', websocketCallbacks.message);
@@ -85,12 +86,12 @@ const createWebsocket = (url: URL, websocketCallbacks: WebsocketCallbacks) => {
     return ws;
 }
 
-const websocket = (gatewayConfig?: Partial<GatewayURLQuery>, websocketCallbacks?: Partial<WebsocketCallbacks>): [Promise<void>, WebSocket] => {
+export const createWebsocket = (gatewayConfig?: Partial<GatewayURLQuery>, websocketCallbacks?: Partial<WebsocketCallbacks>): [Promise<void>, WebSocket] => {
     const runtimeGatewayConfig = {...DefaultGatewayParamters, ...gatewayConfig};
     const runtimeCallbacks = {...DefaultWebsocketCallbacks, ...websocketCallbacks};
     
     const url = generateGatewayConfig(runtimeGatewayConfig);
-    const ws = createWebsocket(url, runtimeCallbacks);
+    const ws = initWebsocket(url, runtimeCallbacks);
 
     const connectionPromise = new Promise<void>((resolve, reject) => {
         const state = (readyState: 0 | 1 | 2 | 3) => {
@@ -119,5 +120,3 @@ const websocket = (gatewayConfig?: Partial<GatewayURLQuery>, websocketCallbacks?
 export const sendGatewayMessage = (websocket: WebSocket, message: GatewaySendPayload) => {
     websocket.send(JSON.stringify(message));
 }
-
-export default websocket;
