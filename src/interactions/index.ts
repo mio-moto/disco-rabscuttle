@@ -1,12 +1,12 @@
-import {Client} from 'discord.js';
+import {Client, REST, Routes} from 'discord.js';
 import {Config} from '../config';
 import DotaCustoms from './plugins/dota2';
 import CryptoTicker from './plugins/crypto';
 import Quote from './plugins/quote';
 import Bark from './plugins/bark';
-import Markov from './plugins/markov';
+//import Markov from './plugins/markov';
 import StockTicker from './plugins/stock';
-import {EightPepe, SearchPepe} from './plugins/8pepe';
+import {EightPepe, SearchPepe, PepeOfTheDay} from './plugins/8pepe';
 import SteamAppSearch from './plugins/steam-app';
 import WikiSearch from './plugins/wikipedia';
 
@@ -26,12 +26,13 @@ const interactions = [
   KarmaInteraction,
   Quote,
   SteamAppSearch,
-  Markov,
+  // Markov,
   CryptoTicker,
   DotaCustoms,
   StockTicker,
   EightPepe,
   SearchPepe,
+  PepeOfTheDay,
   WikiSearch
 ];
 

@@ -3,8 +3,7 @@ import { readFile, writeFile } from 'fs';
 import { AutoCompletePlugin, InteractionPlugin } from '../../message/hooks';
 import { Config } from '../../config';
 import { Logger } from 'winston';
-import { fuzzyMatch } from './crypto';
-import { shuffle } from './8pepe';
+import { shuffle } from './pepe-storage/randomizer';
 
 let logger: Logger;
 

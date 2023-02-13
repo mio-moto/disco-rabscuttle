@@ -7,7 +7,7 @@
     "@types/form-data": "^2.5.0",
     "@types/formdata": "^0.10.0",
     "@types/jimp": "^0.2.28",
-    "@types/node": "^14.11.2",
+    "@types/node": "^18.11.18",
     "@types/node-fetch": "^2.5.10",
     "@types/ws": "^7.4.4",
     "gts": "^3.1.0",
@@ -20,6 +20,7 @@
     "typescript": "^4.6.3"
   },
   "nodemonConfig": {
+    "legacyWatch": true,
     "exec": "ts-node src/index.ts",
     "env": {
       "NODE_ENV": "development"
@@ -45,6 +46,7 @@
   "dependencies": {
     "@discordjs/rest": "^0.1.0-canary.0",
     "bufferutil": "^4.0.6",
+    "develop": "^1.0.0",
     "discord-api-types": "^0.23.1",
     "discord.js": "^14.5.0",
     "erlpack": "github:discord/erlpack",
@@ -52,6 +54,8 @@
     "jimp": "^0.16.1",
     "jsmegahal": "^1.2.4",
     "node-fetch": "^2.6.7",
+    "npm": "^9.2.0",
+    "run": "^1.4.0",
     "utf-8-validate": "^5.0.9",
     "wikipedia": "^1.1.9",
     "winston": "^3.3.3",

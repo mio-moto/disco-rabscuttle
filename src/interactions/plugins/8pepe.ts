@@ -2,118 +2,145 @@ import {
   ApplicationCommandOptionType,
   AutocompleteInteraction,
   ChatInputCommandInteraction,
-  EmbedBuilder
+  Client,
 } from 'discord.js';
 import { AutoCompletePlugin, InteractionPlugin } from '../../message/hooks';
-import { readFileSync } from 'fs';
+import { Config } from '../../config';
+import { Logger } from 'winston';
+import { initializePepeInterface, PepeConfig, PepeIconData, PepeInterface, Rarity } from './pepe-storage';
+import { embedNormal, embedPepeOfTheDay, embedPepeSearchResult, embedRare, embedUltra } from './pepe-storage/embed-builders';
+import interactionError from './utils/interaction-error';
 
-const pepeNameRegex = /assets\/emoji\/(?<id>\d+)?[-_]?(?<pepe>.*?)\.(?:gif|png)/
 
-function notEmpty<TValue>(value: TValue | null | undefined): value is TValue {
-  return value !== null && value !== undefined;
+/***
+ * Configuration
+ **/
+const alwaysExcepts = (_?: any, __?: any, ___?: any) => { throw new Error("Not initialized yet"); }
+const createOrRetrieveStore = (() => {
+  let store: PepeInterface | null = null; 
+
+  return async (config: PepeConfig): Promise<PepeInterface> => {
+    if(!store) {
+      store = await initializePepeInterface(config);
+    }
+    return store;
+  }
+})()
+const retrievePepeConfig = <T>(obj: T): T & { pepes: PepeConfig } => {
+  const pepeConfig = obj as T & { pepes: PepeConfig }
+  if(!pepeConfig.pepes) {
+    throw new Error("Could not initialize pepe storage, no config with key \"pepes\"");
+  }
+  return pepeConfig;
 }
 
-const hash = (s: string) => {
-  let h = 0;
-  for(let i = 0; i < s.length; i++) {
-    h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+
+
+/***
+ * PepeGPT Command
+ **/
+const buildEightPepeCommand = (client: Client, store: PepeInterface, icons: PepeIconData) => {
+  return async (interaction: ChatInputCommandInteraction): Promise<any> => {
+    const phraseParameter = interaction.options.getString("phrase", false);
+    const hit = store.gachaPepe(phraseParameter);
+    if(hit.rarity === Rarity.ultra) {
+      const ownerEntry = store.proposeOwner(hit.value, interaction.user.id, interaction.guild!.id);
+      const ownerName = await client.users.fetch(ownerEntry.owner);
+      await interaction.reply({ ephemeral: false, embeds: [embedUltra(icons.ultra, {ownerId: ownerEntry.owner, ownerName: ownerName.username, timestamp: ownerEntry.timestamp}, hit)]});
+      return;
+    }
+
+    if(hit.rarity === Rarity.rare) {
+      await interaction.reply({ ephemeral: false, embeds: [embedRare(icons.rare, hit)]});
+      return;
+    }
+
+    if(!phraseParameter) {
+      await interaction.reply(hit.value);
+      return;
+    }
+    await interaction.reply({ ephemeral: false, embeds: [embedNormal(phraseParameter, hit)]})
   }
-  return h;
 }
 
-const camelize = (str: string) => {
-  return str
-    .replace("-", " ")
-    .replace("_", " ")
-    .replace(/(?:^\w|[A-Z]|\b\w)/g, (word, index) => index === 0 ? word.toLowerCase() : word.toUpperCase())
-    .replace(/\s+/g, '');
-}
-
-const URIs = JSON.parse(readFileSync('data/pepes.json', 'utf-8')) as string[];
-const pepes = URIs.map(x => {
-  const result = pepeNameRegex.exec(x);
-  if (!result) {
-    return null;
-  }
-  const id = result.groups!["id"] ?? '';
-  const idText = id.length > 0 ? `[${id}] ` : '';
-  const name = camelize(result.groups!["pepe"])
-  const renderedText = `${idText}${name.slice(0, 100 - idText.length)}`;
-  return {
-    "name": renderedText,
-    "value": x
-  }
-}).filter(notEmpty)
-
-export const shuffle = <T>(array: Array<T>) => {
-  let currentIndex = array.length,
-    randomIndex;
-
-  // While there remain elements to shuffle...
-  while (0 !== currentIndex) {
-    // Pick a remaining element...
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-
-    // And swap it with the current element.
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex],
-      array[currentIndex],
-    ];
-  }
-
-  return array;
-};
-
-let activeList: string[] = [];
-
-const seedPepe = (phrase: string) => {
-  const hashValue = Math.abs(hash(phrase.toLowerCase().trim()));
-  const entry = hashValue % URIs.length;
-  return new EmbedBuilder().setFooter({ text: phrase }).setImage(URIs[entry]);
-}
-
-const randomPepe = () => {
-  if (activeList.length === 0) {
-    activeList = shuffle(URIs);
-  }
-  return activeList.shift() ?? '';
-};
-
-const pepeReply = async (interaction: ChatInputCommandInteraction) => {
-  const phrase = interaction.options.getString('phrase');
-  if (phrase && phrase.length > 0) {
-    await interaction.reply({
-      ephemeral: false,
-      embeds: [seedPepe(phrase)]
-    })
-  } else {
-    await interaction.reply(randomPepe())
-  }
-};
-
-const pepeSearch = async (interaction: AutocompleteInteraction) => {
-  const query = interaction.options.getString("query", true).toLowerCase();
-  if (query.length <= 0) {
-    const randomPepes = shuffle(pepes).slice(0, 25).sort((a, b) => a.name.localeCompare(b.name));
-    return await interaction.respond(randomPepes);
-  }
-  const matches = shuffle(pepes.filter(x => x.name.toLowerCase().includes(query))).slice(0, 25);
-  await interaction.respond(matches);
-}
-
-const pepeSearchReply = async (interaction: ChatInputCommandInteraction) => {
-  const url = interaction.options.getString("query", true);
-  const pepe = pepes.find(x => x.value == url)!;
-  await interaction.reply({
-    ephemeral: false,
-    embeds: [
-      new EmbedBuilder()
-        .setTitle(pepe.name ?? "")
-        .setURL(pepe.value)
-        .setImage(url)
+export const EightPepe: InteractionPlugin = {
+  descriptor: {
+    name: 'pepegpt',
+    description: 'Rabscuttles technology of deep space singularity machine learning will bring up the best Pepe!',
+    options: [
+      {
+        type: ApplicationCommandOptionType.String,
+        name: 'phrase',
+        description: 'Optional seed phrase',
+        required: false
+      }
     ]
-  });
+  },
+  onInit: async function(client: Client, config: Config, logger: Logger) {
+    const pepeConfig = retrievePepeConfig(config).pepes;
+    const store = await createOrRetrieveStore(pepeConfig)
+    const totalCount = store.normal.length + store.rare.length + store.ultra.length;
+    logger.info(`Total ${totalCount} pepes: [${store.normal.length}] normies, [${store.rare.length}] rares, [${store.ultra.length}] ultras`);
+    this.onNewInteraction = buildEightPepeCommand(client, store, pepeConfig.icons);
+  },
+  onNewInteraction: alwaysExcepts
+};
+
+
+
+/***
+ * Pepe of the Day
+ **/
+const buildPepeOfTheDayCommand = (store: PepeInterface, config: PepeConfig) => {
+  return async (interaction: ChatInputCommandInteraction) => {
+    const potd = store.pepeOfTheDay();
+    const previousPost = store.getPepepOfTheDay(potd.date, interaction.guildId!);
+    if(previousPost) {
+      await interaction.reply({ ephemeral: true, content: previousPost });
+      return;
+    }
+    await interaction.reply({ ephemeral: false, embeds: [embedPepeOfTheDay(potd, config.icons, potd.date, potd.dateText)]})
+    return;
+  }
+  
+}
+
+export const PepeOfTheDay: InteractionPlugin = {
+  descriptor: {
+    name: 'potd',
+    description: 'Pepe of the Day!',
+  },
+  onInit: async function(client: Client, config: Config, logger: Logger) {
+    const pepeConfig = retrievePepeConfig(config).pepes;
+    const store = await createOrRetrieveStore(pepeConfig)
+    this.onNewInteraction = buildPepeOfTheDayCommand(store, pepeConfig);
+  },
+  onNewInteraction: alwaysExcepts
+};
+
+
+
+/***
+ * Pepe Search
+ **/
+const buildSearchAutocomplete = (store: PepeInterface) => {
+  return async (interaction: AutocompleteInteraction) => {
+    const result = store.suggestPepeName(interaction.options.getString("query", true));
+    interaction.respond(result);
+  }
+}
+
+const buildSearchCommand = (store: PepeInterface) => {
+  return async (interaction: ChatInputCommandInteraction) => {
+    const query = interaction.options.getString("query", true);
+    const result = store.findPepeByName(query);
+    if(!result) {
+      await interactionError(interaction, `I couldn't find the pepe you're looking for, the query you gave me was: '${query}'`, 5000);
+      return;
+    }
+
+    interaction.reply({ephemeral: false, embeds: [embedPepeSearchResult(result.value, result.name)]})
+  }
 }
 
 export const SearchPepe: InteractionPlugin & AutoCompletePlugin = {
@@ -128,22 +155,15 @@ export const SearchPepe: InteractionPlugin & AutoCompletePlugin = {
       autocomplete: true
     }]
   },
-  onNewInteraction: pepeSearchReply,
-  onAutoComplete: pepeSearch
+  onInit: async function(client: Client, config: Config, logger: Logger) {
+    const pepeConfig = retrievePepeConfig(config).pepes;
+    const store = await createOrRetrieveStore(pepeConfig)
+    const totalCount = store.normal.length + store.rare.length + store.ultra.length;
+    logger.info(`Total ${totalCount} pepes: [${store.normal.length}] normies, [${store.rare.length}] rares, [${store.ultra.length}] ultras`);
+    this.onAutoComplete = buildSearchAutocomplete(store);
+    this.onNewInteraction = buildSearchCommand(store);
+  },
+  onNewInteraction: alwaysExcepts,
+  onAutoComplete: alwaysExcepts
 }
 
-export const EightPepe: InteractionPlugin = {
-  descriptor: {
-    name: '8pepe',
-    description: 'Ask the mighty Rabscootle a question and he will respond.',
-    options: [
-      {
-        type: ApplicationCommandOptionType.String,
-        name: 'phrase',
-        description: 'Optional seed phrase',
-        required: false
-      }
-    ]
-  },
-  onNewInteraction: pepeReply
-};
