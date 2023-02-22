@@ -5,7 +5,6 @@ import {AutoCompletePlugin, InteractionPlugin} from '../../message/hooks';
 import interactionError from './utils/interaction-error';
 import {OHLCDataPoint, rasterize, uploadImage} from './imaging';
 import {Logger} from 'winston';
-import logger from '../../logging';
 
 type OHLCData = [
   CloseTime: number,

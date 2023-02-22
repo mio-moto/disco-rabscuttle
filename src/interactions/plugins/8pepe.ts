@@ -10,6 +10,7 @@ import { Logger } from 'winston';
 import { initializePepeInterface, PepeConfig, PepeIconData, PepeInterface, Rarity } from './pepe-storage';
 import { embedNormal, embedPepeOfTheDay, embedPepeSearchResult, embedRare, embedUltra } from './pepe-storage/embed-builders';
 import interactionError from './utils/interaction-error';
+import logger from '../../logging';
 
 
 /***
@@ -35,7 +36,6 @@ const retrievePepeConfig = <T>(obj: T): T & { pepes: PepeConfig } => {
 }
 
 
-
 /***
  * PepeGPT Command
  **/
@@ -43,6 +43,7 @@ const buildEightPepeCommand = (client: Client, store: PepeInterface, icons: Pepe
   return async (interaction: ChatInputCommandInteraction): Promise<any> => {
     const phraseParameter = interaction.options.getString("phrase", false);
     const hit = store.gachaPepe(phraseParameter);
+    logger.info(`PepeGPT Embed URI: ${JSON.stringify(hit.value)}`)
     if(hit.rarity === Rarity.ultra) {
       const ownerEntry = store.proposeOwner(hit.value, interaction.user.id, interaction.guild!.id);
       const ownerName = await client.users.fetch(ownerEntry.owner);
@@ -92,6 +93,8 @@ export const EightPepe: InteractionPlugin = {
  * Pepe of the Day
  **/
 const buildPepeOfTheDayCommand = (store: PepeInterface, config: PepeConfig) => {
+  const capitalize = (str: string, lower = false) => (lower ? str.toLowerCase() : str).replace(/(?:^|\s|["'([{])+\S/g, match => match.toUpperCase());
+
   return async (interaction: ChatInputCommandInteraction) => {
     const potd = store.pepeOfTheDay();
     const previousPost = store.getPepepOfTheDay(potd.date, interaction.guildId!);
@@ -99,7 +102,10 @@ const buildPepeOfTheDayCommand = (store: PepeInterface, config: PepeConfig) => {
       await interaction.reply({ ephemeral: true, content: previousPost });
       return;
     }
-    await interaction.reply({ ephemeral: false, embeds: [embedPepeOfTheDay(potd, config.icons, potd.date, potd.dateText)]})
+    
+    await interaction.reply({ ephemeral: false, embeds: [embedPepeOfTheDay(potd, config.icons, potd.date, capitalize(potd.dateText))]});
+    const message = await interaction.fetchReply();
+    store.setPepeOfTheDay(potd.date, interaction.guildId!, message.url);
     return;
   }
   
@@ -158,8 +164,6 @@ export const SearchPepe: InteractionPlugin & AutoCompletePlugin = {
   onInit: async function(client: Client, config: Config, logger: Logger) {
     const pepeConfig = retrievePepeConfig(config).pepes;
     const store = await createOrRetrieveStore(pepeConfig)
-    const totalCount = store.normal.length + store.rare.length + store.ultra.length;
-    logger.info(`Total ${totalCount} pepes: [${store.normal.length}] normies, [${store.rare.length}] rares, [${store.ultra.length}] ultras`);
     this.onAutoComplete = buildSearchAutocomplete(store);
     this.onNewInteraction = buildSearchCommand(store);
   },

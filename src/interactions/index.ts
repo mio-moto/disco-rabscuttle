@@ -4,7 +4,7 @@ import DotaCustoms from './plugins/dota2';
 import CryptoTicker from './plugins/crypto';
 import Quote from './plugins/quote';
 import Bark from './plugins/bark';
-//import Markov from './plugins/markov';
+import Markov from './plugins/markov';
 import StockTicker from './plugins/stock';
 import {EightPepe, SearchPepe, PepeOfTheDay} from './plugins/8pepe';
 import SteamAppSearch from './plugins/steam-app';
@@ -17,6 +17,7 @@ import {
   ReportInteraction,
 } from './plugins/karma';
 import {loggerFactory} from '../logging';
+import DeleteMessage from './plugins/administration';
 // import { EvilButtonPlugin } from './plugins/evilButton';
 
 const interactions = [
@@ -26,15 +27,17 @@ const interactions = [
   KarmaInteraction,
   Quote,
   SteamAppSearch,
-  // Markov,
+  Markov,
   CryptoTicker,
   DotaCustoms,
   StockTicker,
   EightPepe,
   SearchPepe,
   PepeOfTheDay,
-  WikiSearch
+  WikiSearch,
+  DeleteMessage
 ];
+
 
 export default function bindInteractions(client: Client, config: Config) {
   const robotLogger = loggerFactory("Robot");

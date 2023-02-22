@@ -17,6 +17,7 @@ export interface Config {
   steamApiKey: string;
   finnhubApiKey: string;
   uploadConfig: UploadConfig;
+  administrators: string[]
 }
 
 function loadConfig(path: string): Config {

@@ -6,7 +6,7 @@ import {Logger} from 'winston';
 
 let logger: Logger;
 const jsmegahal = require('jsmegahal');
-const brain = new jsmegahal(3);
+const brain = new jsmegahal(4);
 
 function chunk(arr: Array<string>, chunkSize: number) {
   if (chunkSize <= 0) throw 'Invalid chunk size';

@@ -1,4 +1,13 @@
-import { ApplicationCommandOptionType, AutocompleteInteraction, Client, ChatInputCommandInteraction, InteractionReplyOptions, Message, EmbedBuilder, MessagePayload, MessageCreateOptions } from 'discord.js';
+import {
+    ApplicationCommandOptionType,
+    AutocompleteInteraction,
+    Client,
+    ChatInputCommandInteraction,
+    InteractionReplyOptions,
+    Message,
+    EmbedBuilder,
+    MessageCreateOptions
+} from 'discord.js';
 import fetch from 'node-fetch';
 import { Logger } from 'winston';
 import { Config } from '../../config';
@@ -144,7 +153,10 @@ const generateEmbed = async (nameOrId: string): Promise<EmbedBuilder | null> => 
 const onNewInteraction = async (interaction: ChatInputCommandInteraction) => {    
     var command = interaction.options.getString("app", true);
     const message = interaction.options.getString("comment", false);
-    await interaction.deferReply();
+    const hasMessage = message !== null && message.length > 0;
+    // ephemeral being set, if there's no message.
+    // discord has a bug, where mentions don't trigger notifications when it's being done as followup
+    await interaction.deferReply({ ephemeral: hasMessage });
 
     try {
         const embed = await generateEmbed(command);
@@ -152,11 +164,15 @@ const onNewInteraction = async (interaction: ChatInputCommandInteraction) => {
             return await interactionError(interaction, "Sorry, couldn't find or translate the app", 10_000);
         }
         const options: InteractionReplyOptions = {embeds: [embed]};
-        if(message) {
+        if(hasMessage) {
             const userPreamble = interaction.member ? `${interaction.member.user} said:\n` : ''; 
             options['content'] = `${userPreamble}> ${message}`;
+            // first show the error
+            var errorPromise = interactionError(interaction, "Replying again as text message, otherwise mentions will not work, sorry.");
+            // then reply in public
             await interaction.channel?.send(options as MessageCreateOptions);
-            return await interactionError(interaction, "Responding in public - I will delete this reply.");
+            // then wait until the error is gone
+            return await errorPromise;
         }
         
         return await interaction.followUp(options);

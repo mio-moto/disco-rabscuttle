@@ -31,7 +31,7 @@
     ]
   },
   "scripts": {
-    "develop": "nodemon",
+    "develop": "nodemon --max-old-space-size=4096",
     "build": "tsc",
     "lint": "gts lint",
     "clean": "gts clean",

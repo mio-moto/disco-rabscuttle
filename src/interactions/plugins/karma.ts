@@ -1,7 +1,6 @@
-import {ApplicationCommandData, Client, ChatInputCommandInteraction, ApplicationCommandOptionType} from 'discord.js';
+import {ApplicationCommandData, ChatInputCommandInteraction, ApplicationCommandOptionType} from 'discord.js';
 import {writeFile, readFile} from 'fs';
 import {InteractionPlugin} from '../../message/hooks';
-import {Config} from '../../config';
 import {loggerFactory} from '../../logging';
 
 const logger = loggerFactory('karma');

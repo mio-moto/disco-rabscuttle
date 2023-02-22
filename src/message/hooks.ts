@@ -4,6 +4,7 @@ import {
   ButtonInteraction,
   Client,
   ChatInputCommandInteraction,
+  ContextMenuCommandInteraction,
 } from 'discord.js';
 import {Logger} from 'winston';
 import {Config} from '../config';
@@ -29,4 +30,9 @@ export type ButtonPlugin = {
 export type AutoCompletePlugin = {
   descriptor: ApplicationCommandData;
   onAutoComplete: (interaction: AutocompleteInteraction) => Promise<void>;
+} & BasePlugin;
+
+export type ContextMenuPlugin = {
+  descriptor: ApplicationCommandData,
+  onNewContextAction: (interaction: ContextMenuCommandInteraction) => Promise<any>;
 } & BasePlugin;

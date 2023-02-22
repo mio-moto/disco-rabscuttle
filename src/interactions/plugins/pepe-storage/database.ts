@@ -57,6 +57,7 @@ const buildDatabaseUpdater = (config: PepeConfig, database: PepeDatabase) => {
         const writeCallback = (err: NodeJS.ErrnoException | null): void => {
             if(err) { throw err; }
             if(updateProposed) {
+                updateProposed = false;
                 write(database, writeCallback);
             }
             currentlyWriting = false;

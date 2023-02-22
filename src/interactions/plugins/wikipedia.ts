@@ -1,4 +1,4 @@
-import { AutocompleteInteraction, Client, ChatInputCommandInteraction, EmbedBuilder, Embed, ApplicationCommandOptionType } from 'discord.js';
+import { AutocompleteInteraction, Client, ChatInputCommandInteraction, EmbedBuilder, ApplicationCommandOptionType } from 'discord.js';
 import { Config } from '../../config';
 import { AutoCompletePlugin, InteractionPlugin } from '../../message/hooks';
 import interactionError from './utils/interaction-error';

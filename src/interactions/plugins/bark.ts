@@ -1,4 +1,4 @@
-import {Client, ChatInputCommandInteraction, EmbedBuilder} from 'discord.js';
+import {Client, ChatInputCommandInteraction} from 'discord.js';
 import {InteractionPlugin} from '../../message/hooks';
 import {Config} from '../../config';
 

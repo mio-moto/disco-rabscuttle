@@ -1,7 +1,7 @@
 import { Interaction, Message as DiscordMessage } from 'discord.js';
 import { Config } from '../config';
 import { loggerFactory } from '../logging';
-import { AutoCompletePlugin, ButtonPlugin, InteractionPlugin, MessagePlugin } from './hooks';
+import { AutoCompletePlugin, ButtonPlugin, ContextMenuPlugin, InteractionPlugin, MessagePlugin } from './hooks';
 
 export interface MessageCallback {
   (message: DiscordMessage): void;
@@ -17,14 +17,18 @@ const plugins: {
   autocompletes: {
     [command: string]: AutoCompletePlugin;
   };
+  contextMenu: {
+    [command: string]: ContextMenuPlugin;
+  }
 } = {
   interactions: {},
   messages: [],
   buttons: [],
-  autocompletes: {}
+  autocompletes: {},
+  contextMenu: {}
 };
 
-type PluginTypes = InteractionPlugin | MessagePlugin | ButtonPlugin | AutoCompletePlugin;
+type PluginTypes = InteractionPlugin | MessagePlugin | ButtonPlugin | AutoCompletePlugin | ContextMenuPlugin;
 
 function isInteractionPlugin(plugin: PluginTypes): plugin is InteractionPlugin {
   return (<InteractionPlugin>plugin).onNewInteraction !== undefined;
@@ -42,6 +46,10 @@ function canAutoComplete(plugin: PluginTypes): plugin is AutoCompletePlugin {
   return (<AutoCompletePlugin>plugin).onAutoComplete !== undefined;
 }
 
+function isContextMenuAction(plugin: PluginTypes): plugin is ContextMenuPlugin {
+  return (<ContextMenuPlugin>plugin).onNewContextAction !== undefined;
+}
+
 const registerInteractionPlugin = (plugin: InteractionPlugin) => {
   const name = plugin.descriptor.name;
   plugins.interactions[name] = plugin;
@@ -50,6 +58,11 @@ const registerInteractionPlugin = (plugin: InteractionPlugin) => {
 const registerAutoComplete = (plugin: AutoCompletePlugin) => {
   const name = plugin.descriptor.name;
   plugins.autocompletes[name] = plugin;
+}
+
+const registerContextMenuPlugin = (plugin: ContextMenuPlugin) => {
+  const name = plugin.descriptor.name;
+  plugins.contextMenu[name] = plugin;
 }
 
 export function register(plugin: PluginTypes) {
@@ -67,6 +80,10 @@ export function register(plugin: PluginTypes) {
 
   if (isButtonPlugin(plugin)) {
     plugins.buttons.push(plugin);
+  }
+
+  if(isContextMenuAction(plugin)) {
+    registerContextMenuPlugin(plugin);
   }
 }
 
@@ -118,5 +135,11 @@ export function onNewInteraction(interaction: Interaction) {
       plugins.interactions[interaction.commandName]?.onNewInteraction(interaction);
     })
     return;
+  }
+
+  if(interaction.isContextMenuCommand()) {
+    tryInvoke(() => {
+      plugins.contextMenu[interaction.commandName]?.onNewContextAction(interaction);
+    })
   }
 }
