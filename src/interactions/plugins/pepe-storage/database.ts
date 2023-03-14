@@ -103,7 +103,8 @@ export const buildDatabase = async (config: PepeConfig) => {
     const getPepepOfTheDay = (date: Date, guildId: string): string | undefined => {
         date.setUTCHours(0, 0, 0, 0);
         const utcString = date.toISOString();
-        return database.pepeOfTheDay[guildId][utcString];
+        const guild = database.pepeOfTheDay[guildId] || { };
+        return guild[utcString];
     }
 
     const setPepeOfTheDay = (date: Date, guildId: string, url: string) => {

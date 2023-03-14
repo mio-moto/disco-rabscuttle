@@ -407,7 +407,7 @@ const plugin: InteractionPlugin = {
     name: 'bark',
     description: 'Randomized rudeness from a robot.',
   },
-  onInit: async (client: Client, _: Config) => {
+  onInit: async (client,) => {
     botname = client.user?.toString() || '';
   },
   onNewInteraction: bark,

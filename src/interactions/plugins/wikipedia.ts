@@ -40,7 +40,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
         },
       ],
     },
-    onInit: async (_: Client, __: Config) => { },
+    onInit: async () => { },
     async onNewInteraction(interaction: ChatInputCommandInteraction) {
       await interaction.deferReply();
       var query = interaction.options.getString("query", true);

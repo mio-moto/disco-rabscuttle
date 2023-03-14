@@ -26,7 +26,7 @@ const deleteMessageCommand: ContextMenuPlugin = {
     name: 'Delete',
     type: ApplicationCommandType.Message
   },
-  onInit: async (client, config, logger) => {
+  onInit: async (_, __, config) => {
     administrators = config.administrators;
   },
   onNewContextAction: deleteMessage

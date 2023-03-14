@@ -26,7 +26,7 @@ Robot.setup(config);
     // rest({ token: config.token, clientId: config.userId! });
     // await (rest({ token: config.token, clientId: config.userId! }).unregisterAllCommands(client!.guilds.cache.map(x => x.id)));
     // then bind all interactions
-    bindInteractions(client, config);
+    await bindInteractions(client, config);
     client.on('messageCreate', Robot.onNewMessage);
     client.on('interactionCreate', Robot.onNewInteraction);
   });

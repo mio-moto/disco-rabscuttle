@@ -6,7 +6,7 @@ const hash = (text: string) => murmurhash3_32_gc(text, 0xF3375_600D);
 
 const hashEntry = <T>(pepes: T[]) => {
     return (text: string) => {
-        const entry = hash(text);
+        const entry = hash(text.toLowerCase());
         const index = entry % pepes.length;
         return pepes[index];
     }

@@ -67,7 +67,7 @@ const plugin: InteractionPlugin & MessagePlugin & Preload = {
   preloadTexts: [] as string[],
   loaded: false,
 
-  async onInit(client: Client, config: Config, log: Logger) {
+  async onInit(_, __, config, log) {
     logger = log;
     await loadBrain(loadConfig().brainFile, () => {
       this.loaded = true;

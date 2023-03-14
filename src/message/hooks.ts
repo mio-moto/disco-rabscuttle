@@ -6,12 +6,13 @@ import {
   ChatInputCommandInteraction,
   ContextMenuCommandInteraction,
 } from 'discord.js';
+import { PromisedDatabase } from 'promised-sqlite3';
 import {Logger} from 'winston';
 import {Config} from '../config';
 import {MessageCallback} from './message';
 
 export type BasePlugin = {
-  onInit?: (client: Client, config: Config, logger: Logger) => Promise<void>;
+  onInit?: (client: Client, database: PromisedDatabase, config: Config, logger: Logger) => Promise<void>;
 };
 
 export type MessagePlugin = {

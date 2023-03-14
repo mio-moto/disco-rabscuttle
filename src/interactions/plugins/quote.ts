@@ -206,7 +206,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
     ],
   },
 
-  onInit: async (_: Client, __: Config, log: Logger) => {
+  onInit: async (_, __, ___, log) => {
     logger = log;
     load();
   },

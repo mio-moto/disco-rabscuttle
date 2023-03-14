@@ -383,7 +383,7 @@ const plugin: InteractionPlugin = {
       },
     ],
   },
-  onInit: async (client: Client, config: Config, log: Logger) => {
+  onInit: async (_, __, config, log) => {
     logger = log;
     steamApiKey = config.steamApiKey;
     const yesterday = new Date();

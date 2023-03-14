@@ -3,6 +3,7 @@ import { buildHasher } from "./hasher"
 import { buildRandomizer } from "./randomizer"
 import { buildSearch } from "./search"
 import { buildStorage } from "./storage"
+import { buildVoter } from "./voting"
 
 export enum Rarity {
     ultra = "ultra",
@@ -53,13 +54,14 @@ export interface UltraRare {
 
 export type GetPepe<T> = () => T;
 
-export type PepeInterface = PepeRandomizer & PepeStorage & PepeHasher & PepeDatabase & PepeSearch; 
+export type PepeInterface = PepeRandomizer & PepeStorage & PepeHasher & PepeDatabase & PepeSearch & PepeVoting; 
 
 export type PepeHasher = ReturnType<typeof buildHasher>;
 export type PepeRandomizer = ReturnType<typeof buildRandomizer>;
 export type PepeStorage = Awaited<ReturnType<typeof buildStorage>>;
 export type PepeDatabase = Awaited<ReturnType<typeof buildDatabase>>;
 export type PepeSearch = ReturnType<typeof buildSearch>;
+export type PepeVoting = Awaited<ReturnType<typeof buildVoter>>;
 
 export type Hit<Uniqueness extends Rarity, Payload> = {
     rarity: Uniqueness,

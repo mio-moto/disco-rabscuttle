@@ -241,7 +241,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
       required: true
     }],
   },
-  onInit: async (_: Client, config: Config, logger: Logger) => {
+  onInit: async (_, __, config) => {
     uploadConfig = config.uploadConfig;
   },
   async onNewInteraction(interaction: ChatInputCommandInteraction) {

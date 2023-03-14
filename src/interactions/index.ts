@@ -18,6 +18,7 @@ import {
 } from './plugins/karma';
 import {loggerFactory} from '../logging';
 import DeleteMessage from './plugins/administration';
+import { initializeDatabase } from '../database';
 // import { EvilButtonPlugin } from './plugins/evilButton';
 
 const interactions = [
@@ -39,7 +40,7 @@ const interactions = [
 ];
 
 
-export default function bindInteractions(client: Client, config: Config) {
+export default async function bindInteractions(client: Client, config: Config) {
   const robotLogger = loggerFactory("Robot");
   /*
   Robot.register(EvilButtonPlugin);
@@ -47,6 +48,7 @@ export default function bindInteractions(client: Client, config: Config) {
     EvilButtonPlugin?.onInit(client, config, loggerFactory("EvilButtonPlugin"));
   }
   */
+  const db = await initializeDatabase(config.databaseLocation);
   interactions.forEach(x => {
     client.guilds.cache.forEach(async y => {
       y.commands.create(x.descriptor);
@@ -54,7 +56,7 @@ export default function bindInteractions(client: Client, config: Config) {
     Robot.register(x);
     if (x.onInit) {
       const logger = loggerFactory(x.descriptor.name);
-      x.onInit(client, config, logger);
+      x.onInit(client, db, config, logger);
     }
     robotLogger.info(`${x.descriptor.name} initialized`);
   });

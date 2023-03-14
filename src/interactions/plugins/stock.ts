@@ -170,7 +170,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
       },
     ],
   },
-  onInit: async (_: Client, config: Config) => {
+  onInit: async (_, __, config: Config) => {
     uploadConfig = config.uploadConfig;
     key = config.finnhubApiKey;
   },
