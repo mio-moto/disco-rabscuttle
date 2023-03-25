@@ -1,14 +1,16 @@
 import {
   ActionRowBuilder,
   ApplicationCommandOptionType,
+  ApplicationCommandType,
   AutocompleteInteraction,
   ButtonBuilder,
   ButtonInteraction,
   ButtonStyle,
   ChatInputCommandInteraction,
   Client,
+  CommandInteraction,
 } from 'discord.js';
-import { AutoCompletePlugin, ButtonPlugin, InteractionPlugin } from '../../message/hooks';
+import { AutoCompletePlugin, ButtonPlugin, ContextMenuPlugin, InteractionPlugin } from '../../message/hooks';
 import { initializePepeInterface, PepeConfig, PepeIconData, PepeInterface, PepeVoting, Rarity } from './pepe-storage';
 import { embedNormal, embedPepeOfTheDay, embedPepeSearchResult, embedRare, embedUltra } from './pepe-storage/embed-builders';
 import interactionError from './utils/interaction-error';
@@ -20,13 +22,21 @@ import { PromisedDatabase } from 'promised-sqlite3';
  **/
 const alwaysExcepts = (_?: any, __?: any, ___?: any) => { throw new Error("Not initialized yet"); }
 const createOrRetrieveStore = (() => {
-  let store: PepeInterface | null = null;
+  let initialized = false;
+  let promise: Promise<PepeInterface> | null = null;
 
-  return async (config: PepeConfig, db: PromisedDatabase): Promise<PepeInterface> => {
-    if (!store) {
-      store = await initializePepeInterface(config, db);
+  return async (client: Client, config: PepeConfig, db: PromisedDatabase): Promise<PepeInterface> => {
+    if(!initialized) {
+      initialized = true;
+      promise = initializePepeInterface(config, db);
+      promise.then(store => {
+        setInterval(async () => {
+          const messages = await store!.getVotingsOlderThan(12 * 60);
+          messages.forEach(x => closeVotingSession(client, store!, x.channel, x.message));
+        }, 60 * 1000);  
+      })
     }
-    return store;
+    return promise!;
   }
 })()
 const retrievePepeConfig = <T>(obj: T): T & { pepes: PepeConfig } => {
@@ -37,14 +47,34 @@ const retrievePepeConfig = <T>(obj: T): T & { pepes: PepeConfig } => {
   return pepeConfig;
 }
 
+const closeVotingSession = async (client: Client, voter: PepeVoting, channelId: string, messageId: string) => {
+  try {
+    const channel = (await client.channels.fetch(channelId));
+    if(!channel) {
+      return;
+    }
+    if(!channel.isTextBased()) {
+      return;
+    }
+
+    const message = await channel.messages.fetch(messageId);
+    const result = await voter.getVotingResult(messageId) ?? 0;
+    const components = result === 0 ? [] : [buildVotingResult(result)];
+    message.edit({ embeds: message.embeds, components: components });
+  } catch (e) {
+    console.log(`Discarding voting, error encountered: ${e}`);
+  } finally {
+    voter.closeVoting(messageId);
+  }
+}
+
 
 /***
  * PepeGPT Command
  **/
 const buildEightPepeCommand = (client: Client, store: PepeInterface, icons: PepeIconData) => {
-  return async (interaction: ChatInputCommandInteraction): Promise<any> => {
-    const phraseParameter = interaction.options.getString("phrase", false);
-    const hit = store.gachaPepe(phraseParameter);
+  return async (interaction: CommandInteraction, phrase: string | null): Promise<any> => {
+    const hit = store.gachaPepe(phrase);
     logger.info(`PepeGPT Embed URI: ${JSON.stringify(hit.value)}`)
     if (hit.rarity === Rarity.ultra) {
       const ownerEntry = store.proposeOwner(hit.value, interaction.user.id, interaction.guild!.id);
@@ -58,12 +88,14 @@ const buildEightPepeCommand = (client: Client, store: PepeInterface, icons: Pepe
       return;
     }
 
-    if (!phraseParameter) {
+    if (!phrase) {
       await interaction.reply(hit.value);
       return;
     }
 
-    await interaction.reply({ ephemeral: false, embeds: [embedNormal(phraseParameter, hit)], components: [buildButtonRow(0)] })
+    await interaction.reply({ ephemeral: false, embeds: [embedNormal(phrase, hit)], components: [buildButtonRow(0)] });
+    const reply = await interaction.fetchReply();
+    store.beginVoting(reply.channelId, reply.id);
   }
 }
 
@@ -76,6 +108,18 @@ const formatNumber = (counter: number) => {
   };
   return `${counter}`;
 }
+
+const buildVotingResult = (counter: number) =>
+  new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId("result")
+        .setEmoji("🐸")
+        .setStyle(ButtonStyle.Secondary)
+        .setLabel(`Voting Result: ${counter}`)
+        .setDisabled(true)
+    )
+
 const buildButtonRow = (counter: number) => 
   new ActionRowBuilder<ButtonBuilder>()
     .addComponents([
@@ -125,10 +169,11 @@ export const EightPepe: InteractionPlugin & ButtonPlugin = {
   },
   onInit: async function (client, db, config, logger) {
     const pepeConfig = retrievePepeConfig(config).pepes;
-    const store = await createOrRetrieveStore(pepeConfig, db)
+    const store = await createOrRetrieveStore(client, pepeConfig, db)
     const totalCount = store.normal.length + store.rare.length + store.ultra.length;
     logger.info(`Total ${totalCount} pepes: [${store.normal.length}] normies, [${store.rare.length}] rares, [${store.ultra.length}] ultras`);
-    this.onNewInteraction = buildEightPepeCommand(client, store, pepeConfig.icons);
+    const command = buildEightPepeCommand(client, store, pepeConfig.icons);
+    this.onNewInteraction = (interaction) => command(interaction, interaction.options.getString('phrase', false));
     this.onNewButtonClick = buildVotingCommand(store);
   },
   onNewInteraction: alwaysExcepts,
@@ -152,10 +197,33 @@ const buildPepeOfTheDayCommand = (store: PepeInterface, config: PepeConfig) => {
 
     await interaction.reply({ ephemeral: false, embeds: [embedPepeOfTheDay(potd, config.icons, potd.date, capitalize(potd.dateText))], components: [buildButtonRow(0)] });
     const message = await interaction.fetchReply();
+    store.beginVoting(message.channelId, message.id);
     store.setPepeOfTheDay(potd.date, interaction.guildId!, message.url);
     return;
   }
+}
 
+export const PepeThis: ContextMenuPlugin = {
+  descriptor: {
+    name: "Pepe this!",
+    type: ApplicationCommandType.Message,
+  },
+  onInit: async function (client, db, config, logger) {
+    const pepeConfig = retrievePepeConfig(config).pepes;
+    const store = await createOrRetrieveStore(client, pepeConfig, db);
+    const command = buildEightPepeCommand(client, store, pepeConfig.icons);
+
+
+    this.onNewContextAction = async (interaction) => {
+      if(!interaction.isMessageContextMenuCommand()) {
+        return;
+      }
+  
+      const content = interaction.targetMessage.cleanContent;
+      return command(interaction, content);
+    }
+  },
+  onNewContextAction: alwaysExcepts
 }
 
 export const PepeOfTheDay: InteractionPlugin = {
@@ -165,7 +233,7 @@ export const PepeOfTheDay: InteractionPlugin = {
   },
   onInit: async function (client, db, config, logger) {
     const pepeConfig = retrievePepeConfig(config).pepes;
-    const store = await createOrRetrieveStore(pepeConfig, db)
+    const store = await createOrRetrieveStore(client, pepeConfig, db)
     this.onNewInteraction = buildPepeOfTheDayCommand(store, pepeConfig);
   },
   onNewInteraction: alwaysExcepts
@@ -210,7 +278,7 @@ export const SearchPepe: InteractionPlugin & AutoCompletePlugin = {
   },
   onInit: async function (client, db, config, logger) {
     const pepeConfig = retrievePepeConfig(config).pepes;
-    const store = await createOrRetrieveStore(pepeConfig, db)
+    const store = await createOrRetrieveStore(client, pepeConfig, db)
     this.onAutoComplete = buildSearchAutocomplete(store);
     this.onNewInteraction = buildSearchCommand(store);
   },

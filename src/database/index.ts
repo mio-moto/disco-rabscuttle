@@ -16,7 +16,6 @@ WHERE
 `;
 
 export const initializeDatabase = async (databaseLocation: string) => {
-    
     const logger = loggerFactory("db");
     const db = new PromisedDatabase();
     await db.open(databaseLocation);

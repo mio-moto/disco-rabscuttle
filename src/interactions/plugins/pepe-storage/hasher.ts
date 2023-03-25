@@ -1,13 +1,14 @@
 
-import murmurhash3_32_gc from '../utils/murmurhash3_32';
+import { hash32String } from '../utils/murmurhash3_32';
 import { PepeStorage, PepeRandomizer, GachaHit, Rarity, UltraRare, UltraHit, RareHit, NormalHit, RareUrl, NormalUrl } from './types';
 
-const hash = (text: string) => murmurhash3_32_gc(text, 0xF3375_600D);
+const hash = (text: string) => hash32String(text, 0xF3375_600D);
 
 const hashEntry = <T>(pepes: T[]) => {
     return (text: string) => {
-        const entry = hash(text.toLowerCase());
-        const index = entry % pepes.length;
+        const input = text.toLowerCase();
+        const entry = hash(text.toLowerCase()) || 0;
+        const index = (entry || 0) % pepes.length;
         return pepes[index];
     }
 }

@@ -6,7 +6,7 @@ import Quote from './plugins/quote';
 import Bark from './plugins/bark';
 import Markov from './plugins/markov';
 import StockTicker from './plugins/stock';
-import {EightPepe, SearchPepe, PepeOfTheDay} from './plugins/8pepe';
+import {EightPepe, SearchPepe, PepeOfTheDay, PepeThis} from './plugins/8pepe';
 import SteamAppSearch from './plugins/steam-app';
 import WikiSearch from './plugins/wikipedia';
 
@@ -35,6 +35,7 @@ const interactions = [
   EightPepe,
   SearchPepe,
   PepeOfTheDay,
+  PepeThis,
   WikiSearch,
   DeleteMessage
 ];
