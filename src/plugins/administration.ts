@@ -1,5 +1,5 @@
 import { ApplicationCommandType, ContextMenuCommandInteraction } from "discord.js";
-import { ContextMenuPlugin } from "../../message/hooks";
+import { ContextMenuPlugin } from "../message/hooks";
 
 let administrators: string[] = [];
 

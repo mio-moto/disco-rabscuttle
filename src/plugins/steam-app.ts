@@ -10,8 +10,8 @@ import {
 } from 'discord.js';
 import fetch from 'node-fetch';
 import { Logger } from 'winston';
-import { Config } from '../../config';
-import { AutoCompletePlugin, InteractionPlugin, MessagePlugin } from '../../message/hooks';
+import { Config } from '../config';
+import { AutoCompletePlugin, InteractionPlugin, MessagePlugin } from '../message/hooks';
 import { AppInfo } from './steam responses/appinfo';
 import { AppList } from './steam responses/applist';
 import interactionError from './utils/interaction-error';

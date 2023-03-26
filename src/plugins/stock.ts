@@ -1,7 +1,7 @@
 import { AutocompleteInteraction, Client, ChatInputCommandInteraction, EmbedBuilder, ApplicationCommandOptionType } from 'discord.js';
 import fetch from 'node-fetch';
-import { Config, UploadConfig } from '../../config';
-import { AutoCompletePlugin, InteractionPlugin } from '../../message/hooks';
+import { Config, UploadConfig } from '../config';
+import { AutoCompletePlugin, InteractionPlugin } from '../message/hooks';
 import { rasterize, uploadImage, ohlcMax, ohlcMin } from './imaging';
 import interactionError from './utils/interaction-error';
 

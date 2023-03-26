@@ -1,7 +1,7 @@
 import {ApplicationCommandData, ChatInputCommandInteraction, ApplicationCommandOptionType} from 'discord.js';
 import {writeFile, readFile} from 'fs';
-import {InteractionPlugin} from '../../message/hooks';
-import {loggerFactory} from '../../logging';
+import {InteractionPlugin} from '../message/hooks';
+import {loggerFactory} from '../logging';
 
 const logger = loggerFactory('karma');
 export const TRIGGER_WORDS = ['karma', 'commend', 'report'] as const;

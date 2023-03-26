@@ -10,11 +10,11 @@ import {
   Client,
   CommandInteraction,
 } from 'discord.js';
-import { AutoCompletePlugin, ButtonPlugin, ContextMenuPlugin, InteractionPlugin } from '../../message/hooks';
+import { AutoCompletePlugin, ButtonPlugin, ContextMenuPlugin, InteractionPlugin } from '../message/hooks';
 import { initializePepeInterface, PepeConfig, PepeIconData, PepeInterface, PepeVoting, Rarity } from './pepe-storage';
 import { embedNormal, embedPepeOfTheDay, embedPepeSearchResult, embedRare, embedUltra } from './pepe-storage/embed-builders';
 import interactionError from './utils/interaction-error';
-import logger from '../../logging';
+import logger from '../logging';
 import { PromisedDatabase } from 'promised-sqlite3';
 
 /***

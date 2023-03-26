@@ -1,6 +1,6 @@
 import {Client, ChatInputCommandInteraction} from 'discord.js';
-import {InteractionPlugin} from '../../message/hooks';
-import {Config} from '../../config';
+import {InteractionPlugin} from '../message/hooks';
+import {Config} from '../config';
 
 const tools = [
   'JS',

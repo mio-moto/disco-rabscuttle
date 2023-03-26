@@ -3,8 +3,8 @@ import {existsSync, readFile, writeFile} from 'fs';
 import fetch from 'node-fetch';
 import {URLSearchParams} from 'url';
 import {Logger} from 'winston';
-import {Config} from '../../config';
-import {InteractionPlugin} from '../../message/hooks';
+import {Config} from '../config';
+import {InteractionPlugin} from '../message/hooks';
 import interactionError from './utils/interaction-error';
 import {decimal} from './utils/number-fomatter';
 

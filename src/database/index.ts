@@ -22,7 +22,7 @@ export const initializeDatabase = async (databaseLocation: string) => {
 
     const tables: string[] = [];
     await db.each(listAllTables, [], (result) => {
-        tables.push(result as string);
+        tables.push(result.name as string);
     });
 
     logger.info(`Initialized database, got [${tables.length}] tables: ${JSON.stringify(tables)}`);

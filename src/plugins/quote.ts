@@ -1,7 +1,7 @@
 import { AutocompleteInteraction, Client, ChatInputCommandInteraction, ApplicationCommandOptionType } from 'discord.js';
 import { readFile, writeFile } from 'fs';
-import { AutoCompletePlugin, InteractionPlugin } from '../../message/hooks';
-import { Config } from '../../config';
+import { AutoCompletePlugin, InteractionPlugin } from '../message/hooks';
+import { Config } from '../config';
 import { Logger } from 'winston';
 import { shuffle } from './pepe-storage/randomizer';
 

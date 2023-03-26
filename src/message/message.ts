@@ -28,7 +28,7 @@ const plugins: {
   contextMenu: {}
 };
 
-type PluginTypes = InteractionPlugin | MessagePlugin | ButtonPlugin | AutoCompletePlugin | ContextMenuPlugin;
+export type PluginTypes = InteractionPlugin | MessagePlugin | ButtonPlugin | AutoCompletePlugin | ContextMenuPlugin;
 
 function isInteractionPlugin(plugin: PluginTypes): plugin is InteractionPlugin {
   return (<InteractionPlugin>plugin).onNewInteraction !== undefined;
@@ -87,15 +87,18 @@ export function register(plugin: PluginTypes) {
   }
 }
 
-let botConfig: Config;
 
-export function setup(config: Config) {
-  botConfig = config;
+export function buildEventBus(config: Config) {
+  return {
+    onNewMessage: (message: DiscordMessage) => onNewMessage(message, config),
+    onNewInteraction: onNewInteraction,
+    register: register
+  }
 }
 
-export function onNewMessage(discordMessage: DiscordMessage) {
+export function onNewMessage(discordMessage: DiscordMessage, config: Config) {
   // reject messages from the bot himself.
-  if (discordMessage.author.id === botConfig?.userId) {
+  if (discordMessage.author.id === config.userId) {
     return;
   }
 

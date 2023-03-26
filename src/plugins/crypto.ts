@@ -1,7 +1,7 @@
 import {AutocompleteInteraction, Client, ChatInputCommandInteraction, EmbedBuilder, ApplicationCommandOptionType} from 'discord.js';
-import {Config, UploadConfig} from '../../config';
+import {Config, UploadConfig} from '../config';
 import fetch from 'node-fetch';
-import {AutoCompletePlugin, InteractionPlugin} from '../../message/hooks';
+import {AutoCompletePlugin, InteractionPlugin} from '../message/hooks';
 import interactionError from './utils/interaction-error';
 import {OHLCDataPoint, rasterize, uploadImage} from './imaging';
 import {Logger} from 'winston';

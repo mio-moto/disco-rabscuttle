@@ -1,4 +1,4 @@
-import {UploadConfig} from '../../../config';
+import {UploadConfig} from '../../config';
 import FormData from 'form-data';
 import Jimp from 'jimp';
 import {MIME_PNG} from 'jimp';

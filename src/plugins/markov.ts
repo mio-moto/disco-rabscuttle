@@ -1,7 +1,7 @@
 import {Client, ChatInputCommandInteraction, Message, ApplicationCommandOptionType} from 'discord.js';
 import {createWriteStream, readFile, WriteStream} from 'fs';
-import {InteractionPlugin, MessagePlugin} from '../../message/hooks';
-import loadConfig, {Config} from '../../config';
+import {InteractionPlugin, MessagePlugin} from '../message/hooks';
+import loadConfig, {Config} from '../config';
 import {Logger} from 'winston';
 
 let logger: Logger;
