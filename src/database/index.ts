@@ -1,11 +1,9 @@
-import { PromisedDatabase } from "promised-sqlite3";
-import { createLogger } from "winston";
-import logger, { loggerFactory } from "../logging";
+import {PromisedDatabase} from 'promised-sqlite3';
+import {loggerFactory} from '../logging';
 
-export interface DatabaseConfig { 
-    location: string;
+export interface DatabaseConfig {
+  location: string;
 }
-
 
 const listAllTables = `
 SELECT name
@@ -16,15 +14,19 @@ WHERE
 `;
 
 export const initializeDatabase = async (databaseLocation: string) => {
-    const logger = loggerFactory("db");
-    const db = new PromisedDatabase();
-    await db.open(databaseLocation);
+  const logger = loggerFactory('db');
+  const db = new PromisedDatabase();
+  await db.open(databaseLocation);
 
-    const tables: string[] = [];
-    await db.each(listAllTables, [], (result) => {
-        tables.push(result.name as string);
-    });
+  const tables: string[] = [];
+  await db.each(listAllTables, [], result => {
+    tables.push(result.name as string);
+  });
 
-    logger.info(`Initialized database, got [${tables.length}] tables: ${JSON.stringify(tables)}`);
-    return db;
-}
+  logger.info(
+    `Initialized database, got [${tables.length}] tables: ${JSON.stringify(
+      tables
+    )}`
+  );
+  return db;
+};

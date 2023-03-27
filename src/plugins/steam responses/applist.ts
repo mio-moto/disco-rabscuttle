@@ -1,5 +1,5 @@
 export interface AppList {
-    applist: {
-        apps: {appid: number, name: string}[]
-    }
+  applist: {
+    apps: {appid: number; name: string}[];
+  };
 }

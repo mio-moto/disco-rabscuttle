@@ -1,7 +1,13 @@
-import { Interaction, Message as DiscordMessage } from 'discord.js';
-import { Config } from '../config';
-import { loggerFactory } from '../logging';
-import { AutoCompletePlugin, ButtonPlugin, ContextMenuPlugin, InteractionPlugin, MessagePlugin } from './hooks';
+import {Interaction, Message as DiscordMessage} from 'discord.js';
+import {Config} from '../config';
+import {loggerFactory} from '../logging';
+import {
+  AutoCompletePlugin,
+  ButtonPlugin,
+  ContextMenuPlugin,
+  InteractionPlugin,
+  MessagePlugin,
+} from './hooks';
 
 export interface MessageCallback {
   (message: DiscordMessage): void;
@@ -19,16 +25,21 @@ const plugins: {
   };
   contextMenu: {
     [command: string]: ContextMenuPlugin;
-  }
+  };
 } = {
   interactions: {},
   messages: [],
   buttons: [],
   autocompletes: {},
-  contextMenu: {}
+  contextMenu: {},
 };
 
-export type PluginTypes = InteractionPlugin | MessagePlugin | ButtonPlugin | AutoCompletePlugin | ContextMenuPlugin;
+export type PluginTypes =
+  | InteractionPlugin
+  | MessagePlugin
+  | ButtonPlugin
+  | AutoCompletePlugin
+  | ContextMenuPlugin;
 
 function isInteractionPlugin(plugin: PluginTypes): plugin is InteractionPlugin {
   return (<InteractionPlugin>plugin).onNewInteraction !== undefined;
@@ -58,12 +69,12 @@ const registerInteractionPlugin = (plugin: InteractionPlugin) => {
 const registerAutoComplete = (plugin: AutoCompletePlugin) => {
   const name = plugin.descriptor.name;
   plugins.autocompletes[name] = plugin;
-}
+};
 
 const registerContextMenuPlugin = (plugin: ContextMenuPlugin) => {
   const name = plugin.descriptor.name;
   plugins.contextMenu[name] = plugin;
-}
+};
 
 export function register(plugin: PluginTypes) {
   if (isMessagePlugin(plugin)) {
@@ -74,26 +85,25 @@ export function register(plugin: PluginTypes) {
     registerInteractionPlugin(plugin);
   }
 
-  if(canAutoComplete(plugin)) {
-    registerAutoComplete(plugin)
-  };
+  if (canAutoComplete(plugin)) {
+    registerAutoComplete(plugin);
+  }
 
   if (isButtonPlugin(plugin)) {
     plugins.buttons.push(plugin);
   }
 
-  if(isContextMenuAction(plugin)) {
+  if (isContextMenuAction(plugin)) {
     registerContextMenuPlugin(plugin);
   }
 }
-
 
 export function buildEventBus(config: Config) {
   return {
     onNewMessage: (message: DiscordMessage) => onNewMessage(message, config),
     onNewInteraction: onNewInteraction,
-    register: register
-  }
+    register: register,
+  };
 }
 
 export function onNewMessage(discordMessage: DiscordMessage, config: Config) {
@@ -104,7 +114,7 @@ export function onNewMessage(discordMessage: DiscordMessage, config: Config) {
 
   plugins.messages.forEach(x => {
     try {
-      x.onNewMessage(discordMessage)
+      x.onNewMessage(discordMessage);
     } catch (e) {
       logger.error(e);
     }
@@ -117,32 +127,42 @@ const tryInvoke = (action: () => void) => {
   } catch (e) {
     logger.error(e);
   }
-}
+};
 
 export function onNewInteraction(interaction: Interaction) {
   // commands can allow for auto-complete
-  if(interaction.isAutocomplete()) {
-    tryInvoke(() => plugins.autocompletes[interaction.commandName]?.onAutoComplete(interaction));
+  if (interaction.isAutocomplete()) {
+    tryInvoke(() =>
+      plugins.autocompletes[interaction.commandName]?.onAutoComplete(
+        interaction
+      )
+    );
     return;
   }
-  
+
   // button interactions (when the bot sent out a bunch of buttons and they get clicked)
-  if(interaction.isButton()) {
-    plugins.buttons.forEach(x => tryInvoke(() => x.onNewButtonClick(interaction)))
+  if (interaction.isButton()) {
+    plugins.buttons.forEach(x =>
+      tryInvoke(() => x.onNewButtonClick(interaction))
+    );
     return;
   }
 
   // complete command interactions
-  if(interaction.isChatInputCommand()) {
+  if (interaction.isChatInputCommand()) {
     tryInvoke(() => {
-      plugins.interactions[interaction.commandName]?.onNewInteraction(interaction);
-    })
+      plugins.interactions[interaction.commandName]?.onNewInteraction(
+        interaction
+      );
+    });
     return;
   }
 
-  if(interaction.isContextMenuCommand()) {
+  if (interaction.isContextMenuCommand()) {
     tryInvoke(() => {
-      plugins.contextMenu[interaction.commandName]?.onNewContextAction(interaction);
-    })
+      plugins.contextMenu[interaction.commandName]?.onNewContextAction(
+        interaction
+      );
+    });
   }
 }

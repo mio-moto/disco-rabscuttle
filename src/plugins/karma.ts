@@ -1,4 +1,8 @@
-import {ApplicationCommandData, ChatInputCommandInteraction, ApplicationCommandOptionType} from 'discord.js';
+import {
+  ApplicationCommandData,
+  ChatInputCommandInteraction,
+  ApplicationCommandOptionType,
+} from 'discord.js';
 import {writeFile, readFile} from 'fs';
 import {InteractionPlugin} from '../message/hooks';
 import {loggerFactory} from '../logging';

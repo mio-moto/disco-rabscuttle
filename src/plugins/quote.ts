@@ -1,9 +1,12 @@
-import { AutocompleteInteraction, Client, ChatInputCommandInteraction, ApplicationCommandOptionType } from 'discord.js';
-import { readFile, writeFile } from 'fs';
-import { AutoCompletePlugin, InteractionPlugin } from '../message/hooks';
-import { Config } from '../config';
-import { Logger } from 'winston';
-import { shuffle } from './pepe-storage/randomizer';
+import {
+  AutocompleteInteraction,
+  ChatInputCommandInteraction,
+  ApplicationCommandOptionType,
+} from 'discord.js';
+import {readFile, writeFile} from 'fs';
+import {AutoCompletePlugin, InteractionPlugin} from '../message/hooks';
+import {Logger} from 'winston';
+import {shuffle} from './pepe-storage/randomizer';
 
 let logger: Logger;
 
@@ -61,9 +64,7 @@ const formatQuote = (quote: Quote, extraInfo: boolean): string => {
   const metaData = extraInfo
     ? `\n _submitted by **${quote[2]}** on ${timeFormatter(quote[3])}`
     : '';
-  return `${quote[0]}:\n> ${quote[1]
-    .split('||')
-    .join('\n> ')}${metaData}`;
+  return `${quote[0]}:\n> ${quote[1].split('||').join('\n> ')}${metaData}`;
 };
 
 const getUsercount = (): number => {
@@ -77,14 +78,14 @@ const getAutoCompleteEntry = (quote: Quote) => {
   const quoteText = quote[1].slice(0, 100 - indexName.length);
   return {
     value: quote[0],
-    name: `${indexName}${quoteText}`
+    name: `${indexName}${quoteText}`,
   };
 };
 
 const getAutoCompleteEntryString = (quote: Quote) => {
   const entry = getAutoCompleteEntry(quote);
-  return { ...entry, value: `${entry.value}` }
-}
+  return {...entry, value: `${entry.value}`};
+};
 
 const runtime = {
   pickRandomQuote: (extras: boolean) =>
@@ -92,17 +93,18 @@ const runtime = {
   getQuote: (index: number, extras: boolean) => {
     const quote = quotes.find(x => x[0] == index);
     if (quote == null) {
-      return `The quote with the index [${index}] does not seem to exist`
+      return `The quote with the index [${index}] does not seem to exist`;
     }
     return formatQuote(quote, extras);
   },
   statusReport: () =>
-    `There are ${quotes.length
+    `There are ${
+      quotes.length
     } quotes from ${getUsercount()} shitposters. You're welcome.`,
   addQuote: (interaction: ChatInputCommandInteraction): string => {
     // quote: string, author: string
-    var quote = interaction.options.getString("quote", true);
-    var author = interaction.member?.user.username ?? 'unknown';
+    const quote = interaction.options.getString('quote', true);
+    const author = interaction.member?.user.username ?? 'unknown';
     const newQuoteIndex = quotes[quotes.length - 1][0] + 1;
     const newQuote: Quote = [
       newQuoteIndex,
@@ -120,12 +122,15 @@ const runtime = {
   },
   searchQuote: (query: string) => {
     if (query === '') {
-      return shuffle(quotes)
-        .slice(0, 25)
-        .map(getAutoCompleteEntryString);
+      return shuffle(quotes).slice(0, 25).map(getAutoCompleteEntryString);
     }
     return quotes
-      .filter(x => query.toLowerCase().split(" ").every(y => x[1].toLowerCase().includes(y)))
+      .filter(x =>
+        query
+          .toLowerCase()
+          .split(' ')
+          .every(y => x[1].toLowerCase().includes(y))
+      )
       .slice(0, 25)
       .map(getAutoCompleteEntryString);
   },
@@ -136,7 +141,7 @@ const runtime = {
         .sort((a, b) => a[0] - b[0])
         .map(getAutoCompleteEntry);
     }
-    var stringIndex = `${index}`
+    const stringIndex = `${index}`;
     return quotes
       .map((x: Quote): [string, number] => [`${x[0]}`, x[0]])
       .filter(x => x[0].startsWith(stringIndex))
@@ -144,7 +149,7 @@ const runtime = {
       .sort((a, b) => a[0] - b[0])
       .slice(0, 25)
       .map(getAutoCompleteEntry);
-  }
+  },
 } as const;
 
 const plugin: InteractionPlugin & AutoCompletePlugin = {
@@ -185,7 +190,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
             name: 'query',
             description: 'string that partially matches a quote',
             autocomplete: true,
-            required: true
+            required: true,
           },
         ],
       },
@@ -199,7 +204,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
             name: 'index',
             description: 'Number that matches the quote',
             autocomplete: true,
-            required: true
+            required: true,
           },
         ],
       },
@@ -211,7 +216,12 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
     load();
   },
   onNewInteraction: async (interaction: ChatInputCommandInteraction) => {
-    const subCommand = interaction.options.getSubcommand() as "random" | "status" | "add" | "search" | "index";
+    const subCommand = interaction.options.getSubcommand() as
+      | 'random'
+      | 'status'
+      | 'add'
+      | 'search'
+      | 'index';
     let index: number;
     switch (subCommand) {
       case 'random':
@@ -229,14 +239,20 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
     }
   },
   onAutoComplete: async (interaction: AutocompleteInteraction) => {
-    const subcommand = interaction.options.getSubcommand() as "search" | "index";
+    const subcommand = interaction.options.getSubcommand() as
+      | 'search'
+      | 'index';
     switch (subcommand) {
       case 'search':
-        return await interaction.respond(runtime.searchQuote(interaction.options.getString('query', true)))
+        return await interaction.respond(
+          runtime.searchQuote(interaction.options.getString('query', true))
+        );
       case 'index':
-        return await interaction.respond(runtime.searchIndex(interaction.options.getNumber('index', true)))
+        return await interaction.respond(
+          runtime.searchIndex(interaction.options.getNumber('index', true))
+        );
     }
-  }
+  },
 };
 
 export default plugin;

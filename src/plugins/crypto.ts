@@ -1,10 +1,14 @@
-import {AutocompleteInteraction, Client, ChatInputCommandInteraction, EmbedBuilder, ApplicationCommandOptionType} from 'discord.js';
-import {Config, UploadConfig} from '../config';
+import {
+  AutocompleteInteraction,
+  ChatInputCommandInteraction,
+  EmbedBuilder,
+  ApplicationCommandOptionType,
+} from 'discord.js';
+import {UploadConfig} from '../config';
 import fetch from 'node-fetch';
 import {AutoCompletePlugin, InteractionPlugin} from '../message/hooks';
 import interactionError from './utils/interaction-error';
 import {OHLCDataPoint, rasterize, uploadImage} from './imaging';
-import {Logger} from 'winston';
 
 type OHLCData = [
   CloseTime: number,
@@ -51,13 +55,16 @@ const emojiSelector = (value: number) => {
   if (value >= -10) {
     return '📉';
   }
-  if(value >= -15) {
+  if (value >= -15) {
     return '🧱';
   }
   return '🦽';
 };
 
-const call = async (ticker: Symbols, interaction: ChatInputCommandInteraction) => {
+const call = async (
+  ticker: Symbols,
+  interaction: ChatInputCommandInteraction
+) => {
   await interaction.deferReply();
   const summaryPromise = fetch(
     `https://api.cryptowat.ch/markets/kraken/${ticker}/summary`
@@ -66,7 +73,10 @@ const call = async (ticker: Symbols, interaction: ChatInputCommandInteraction) =
     `https://api.cryptowat.ch/markets/kraken/${ticker}/ohlc`
   );
   if (!ohlcResponse.ok) {
-    await interactionError(interaction, 'Sorry, there was an error getting graph data.');
+    await interactionError(
+      interaction,
+      'Sorry, there was an error getting graph data.'
+    );
     return;
   }
 
@@ -118,15 +128,18 @@ const call = async (ticker: Symbols, interaction: ChatInputCommandInteraction) =
     .setTitle(
       `${emoji} ${textBits.name} (${symbol}): ${close.toFixed(2)}${currency}`
     )
-    .addFields({
-      name: '24h Range',
-      value: `${percentage.toFixed(2)}% (${range.toFixed(2)}${currency})`,
-      inline: true
-    }, {
-      name: 'High / Low',
-      value: `${high.toFixed(2)}${currency} - ${low.toFixed(2)}${currency}`,
-      inline: true
-    })
+    .addFields(
+      {
+        name: '24h Range',
+        value: `${percentage.toFixed(2)}% (${range.toFixed(2)}${currency})`,
+        inline: true,
+      },
+      {
+        name: 'High / Low',
+        value: `${high.toFixed(2)}${currency} - ${low.toFixed(2)}${currency}`,
+        inline: true,
+      }
+    );
   if (imageUpload.success) {
     embed.setThumbnail(imageUpload.url);
   }
@@ -210,36 +223,39 @@ export const fuzzyMatch = (input: string, comparison: string) => {
   const inputCharacters = Array.from(input);
   const comparisonCharacters = Array.from(comparison);
 
-  while(true) {
+  while (true) {
     const character = inputCharacters.shift();
-    if(!character) {
+    if (!character) {
       return true;
     }
-    if(!comparisonCharacters.includes(character)) {
+    if (!comparisonCharacters.includes(character)) {
       return false;
     }
     const index = comparisonCharacters.indexOf(character);
     comparisonCharacters.splice(index, 1);
   }
-}
+};
 
 const findMatches = (coin: string) => {
-  return coins.filter(x => fuzzyMatch(coin, x.name) || fuzzyMatch(coin, x.value));
-}
-
+  return coins.filter(
+    x => fuzzyMatch(coin, x.name) || fuzzyMatch(coin, x.value)
+  );
+};
 
 const plugin: InteractionPlugin & AutoCompletePlugin = {
   descriptor: {
     name: 'crypto',
     description: 'Show current crypto exchange rates.',
-    
-    options: [{
-      name: 'coin',
-      description: 'Enter the coin you want to track',
-      type: ApplicationCommandOptionType.String,
-      autocomplete: true,
-      required: true
-    }],
+
+    options: [
+      {
+        name: 'coin',
+        description: 'Enter the coin you want to track',
+        type: ApplicationCommandOptionType.String,
+        autocomplete: true,
+        required: true,
+      },
+    ],
   },
   onInit: async (_, __, config) => {
     uploadConfig = config.uploadConfig;
@@ -255,7 +271,7 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
     const coin = interaction.options.getString('coin')?.trim() || '';
     const candidates = findMatches(coin).splice(0, 24);
     await interaction.respond(candidates);
-  }
+  },
 };
 
 export default plugin;

@@ -6,18 +6,25 @@ import {
   ChatInputCommandInteraction,
   ContextMenuCommandInteraction,
 } from 'discord.js';
-import { PromisedDatabase } from 'promised-sqlite3';
+import {PromisedDatabase} from 'promised-sqlite3';
 import {Logger} from 'winston';
 import {Config} from '../config';
 import {MessageCallback} from './message';
 
 export type BasePlugin = {
-  onInit?: (client: Client, database: PromisedDatabase, config: Config, logger: Logger) => Promise<void>;
+  onInit?: (
+    client: Client,
+    database: PromisedDatabase,
+    config: Config,
+    logger: Logger
+  ) => Promise<void>;
 };
 
 export type UserInteractionPlugin = InteractionPlugin | ContextMenuPlugin;
 export type CallbackPlugin = MessagePlugin | ButtonPlugin | AutoCompletePlugin;
-export function isUserInteractionPlugin(plugin: Plugin): plugin is UserInteractionPlugin {
+export function isUserInteractionPlugin(
+  plugin: Plugin
+): plugin is UserInteractionPlugin {
   return (<UserInteractionPlugin>plugin).descriptor !== undefined;
 }
 
@@ -25,9 +32,16 @@ export function isCallbackPlugin(plugin: Plugin): plugin is CallbackPlugin {
   return !isUserInteractionPlugin(plugin);
 }
 
-export type Plugin = InteractionPlugin | MessagePlugin | ButtonPlugin | AutoCompletePlugin | ContextMenuPlugin;
+export type Plugin =
+  | InteractionPlugin
+  | MessagePlugin
+  | ButtonPlugin
+  | AutoCompletePlugin
+  | ContextMenuPlugin;
 
-export function isInteractionPlugin(plugin: Plugin): plugin is InteractionPlugin {
+export function isInteractionPlugin(
+  plugin: Plugin
+): plugin is InteractionPlugin {
   return (<InteractionPlugin>plugin).onNewInteraction !== undefined;
 }
 
@@ -43,10 +57,11 @@ export function canAutoComplete(plugin: Plugin): plugin is AutoCompletePlugin {
   return (<AutoCompletePlugin>plugin).onAutoComplete !== undefined;
 }
 
-export function isContextMenuAction(plugin: Plugin): plugin is ContextMenuPlugin {
+export function isContextMenuAction(
+  plugin: Plugin
+): plugin is ContextMenuPlugin {
   return (<ContextMenuPlugin>plugin).onNewContextAction !== undefined;
 }
-
 
 export type MessagePlugin = {
   onNewMessage: MessageCallback;
@@ -67,6 +82,8 @@ export type AutoCompletePlugin = {
 } & BasePlugin;
 
 export type ContextMenuPlugin = {
-  descriptor: ApplicationCommandData,
-  onNewContextAction: (interaction: ContextMenuCommandInteraction) => Promise<any>;
+  descriptor: ApplicationCommandData;
+  onNewContextAction: (
+    interaction: ContextMenuCommandInteraction
+  ) => Promise<any>;
 } & BasePlugin;

@@ -1,9 +1,12 @@
-import {Client, ChatInputCommandInteraction, EmbedBuilder, ApplicationCommandOptionType} from 'discord.js';
+import {
+  ChatInputCommandInteraction,
+  EmbedBuilder,
+  ApplicationCommandOptionType,
+} from 'discord.js';
 import {existsSync, readFile, writeFile} from 'fs';
 import fetch from 'node-fetch';
 import {URLSearchParams} from 'url';
 import {Logger} from 'winston';
-import {Config} from '../config';
 import {InteractionPlugin} from '../message/hooks';
 import interactionError from './utils/interaction-error';
 import {decimal} from './utils/number-fomatter';
@@ -253,25 +256,30 @@ const strategy = {
     const playerCountResponse: PlayerCountResponse = JSON.parse(
       await playerCountRequest.text()
     );
-    let playerCount = playerCountResponse.player_count;
-    let spectatorCount = playerCountResponse.spectator_count;
+    const playerCount = playerCountResponse.player_count;
+    const spectatorCount = playerCountResponse.spectator_count;
 
     const playerLobbyRequest = await playerLobbyRequestPromise;
     if (!playerLobbyRequest.ok) {
       logger.error(playerLobbyRequest);
-      await interactionError(interaction, "Sorry, I couldn't fetch lobby data.");
+      await interactionError(
+        interaction,
+        "Sorry, I couldn't fetch lobby data."
+      );
       return;
     }
     const playerLobbyResponse: PlayerLobbyResponse = JSON.parse(
       await playerLobbyRequest.text()
     );
-    let [lobbyPlayers, lobbyCount] = gatherLobbyStats(
+    const [lobbyPlayers, lobbyCount] = gatherLobbyStats(
       playerLobbyResponse,
       customGameId
     );
 
-    let currentRanking = currentPopularGames.findIndex(x => x === customGameId);
-    let yesterdayRanking = yesterdayPopularGames.findIndex(
+    const currentRanking = currentPopularGames.findIndex(
+      x => x === customGameId
+    );
+    const yesterdayRanking = yesterdayPopularGames.findIndex(
       x => x === customGameId
     );
 
@@ -282,21 +290,29 @@ const strategy = {
       .setURL(getWorkshopSiteUri(customGameId))
       .setTitle(title)
       .setThumbnail(thumbnail)
-      .addFields({
-        name: 'Current Players',
-        value: `${playerCount.toLocaleString()} playing\n` +
-          `${spectatorCount.toLocaleString()} ` +
-          `spectating\n${lobbyPlayers.toLocaleString()} waiting in ` +
-          `${lobbyCount.toLocaleString()} lobbies`,
-        inline: true
-      }, {
-        name: 'Ranking',
-        value: `${trend}\n` +
-          `${decimal(subscriptions, 1, false, true)} subscribed\n` +
-          `${decimal(favorited, 1, false, true)} favourited`,
-        inline: true
-      });
-    return await interaction.followUp({embeds: [messageEmbed], ephemeral: false});
+      .addFields(
+        {
+          name: 'Current Players',
+          value:
+            `${playerCount.toLocaleString()} playing\n` +
+            `${spectatorCount.toLocaleString()} ` +
+            `spectating\n${lobbyPlayers.toLocaleString()} waiting in ` +
+            `${lobbyCount.toLocaleString()} lobbies`,
+          inline: true,
+        },
+        {
+          name: 'Ranking',
+          value:
+            `${trend}\n` +
+            `${decimal(subscriptions, 1, false, true)} subscribed\n` +
+            `${decimal(favorited, 1, false, true)} favourited`,
+          inline: true,
+        }
+      );
+    return await interaction.followUp({
+      embeds: [messageEmbed],
+      ephemeral: false,
+    });
   },
 };
 

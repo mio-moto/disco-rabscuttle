@@ -10,5 +10,5 @@ export default async (
     setTimeout(async () => {
       await interaction.deleteReply();
     }, durationInMs);
-  } catch { }
+  } catch {}
 };

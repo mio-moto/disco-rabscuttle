@@ -1,13 +1,21 @@
-import { Client } from 'discord.js';
-import { Config } from '../config';
-import { register } from './../message';
-import { loggerFactory } from '../logging';
-import { PromisedDatabase } from 'promised-sqlite3';
-import { ContextMenuPlugin, InteractionPlugin } from '../message/hooks';
+import {Client} from 'discord.js';
+import {Config} from '../config';
+import {register} from './../message';
+import {loggerFactory} from '../logging';
+import {PromisedDatabase} from 'promised-sqlite3';
+import {InteractionPlugin, isInteractionPlugin, Plugin} from '../message/hooks';
 
-export default async function bindInteractions(client: Client, config: Config, database: PromisedDatabase, interactions: (InteractionPlugin | ContextMenuPlugin)[]) {
-  const interactionLogger = loggerFactory("Interactions");
-  interactions.forEach(x => {
+export default async function registerInteractions(
+  client: Client,
+  config: Config,
+  database: PromisedDatabase,
+  interactions: Plugin[]
+) {
+  const interactionLogger = loggerFactory('Interactions');
+  const interactivePlugins = interactions.filter(x =>
+    isInteractionPlugin(x)
+  ) as InteractionPlugin[];
+  interactivePlugins.forEach(x => {
     client.guilds.cache.forEach(async y => {
       y.commands.create(x.descriptor);
     });

@@ -1,1 +1,6 @@
-export {register, onNewMessage, onNewInteraction, buildEventBus} from './message';
+export {
+  register,
+  onNewMessage,
+  onNewInteraction,
+  buildEventBus,
+} from './message';

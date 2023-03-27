@@ -45,3 +45,4 @@ yarn.lock
 
 # ignore data file
 data
+start.sh

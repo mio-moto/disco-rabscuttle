@@ -1,6 +1,5 @@
-import {Client, ChatInputCommandInteraction} from 'discord.js';
+import {ChatInputCommandInteraction} from 'discord.js';
 import {InteractionPlugin} from '../message/hooks';
-import {Config} from '../config';
 
 const tools = [
   'JS',
@@ -407,7 +406,7 @@ const plugin: InteractionPlugin = {
     name: 'bark',
     description: 'Randomized rudeness from a robot.',
   },
-  onInit: async (client,) => {
+  onInit: async client => {
     botname = client.user?.toString() || '';
   },
   onNewInteraction: bark,

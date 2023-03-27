@@ -28,7 +28,7 @@ export const decimal = (
     return '~' + Math.round(value) + metric;
   }
   if (fixed) {
-    return `${value.toFixed(width)}${metric}`
+    return `${value.toFixed(width)}${metric}`;
   }
 
   return value + metric;
