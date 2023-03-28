@@ -12,6 +12,7 @@ import {Config} from '../config';
 import {MessageCallback} from './message';
 
 export type BasePlugin = {
+  name: string,
   onInit?: (
     client: Client,
     database: PromisedDatabase,
@@ -73,6 +74,7 @@ export type InteractionPlugin = {
 } & BasePlugin;
 
 export type ButtonPlugin = {
+  publishedButtonIds: string[],
   onNewButtonClick: (interaction: ButtonInteraction) => Promise<void>;
 } & BasePlugin;
 

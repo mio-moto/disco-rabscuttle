@@ -153,6 +153,7 @@ const runtime = {
 } as const;
 
 const plugin: InteractionPlugin & AutoCompletePlugin = {
+  name: "Quote",
   descriptor: {
     name: 'quote',
     description: 'Sending and storing quotes',

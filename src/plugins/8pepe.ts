@@ -172,6 +172,15 @@ const formatNumber = (counter: number) => {
   return `${counter}`;
 };
 
+enum ButtonId {
+  Sentient = "sentient",
+  Meh = "meh",
+  Score = "score",
+}
+
+const ButtonIds = [ButtonId.Sentient, ButtonId.Meh, ButtonId.Score];
+const InteractableButtonIds = [ButtonId.Sentient, ButtonId.Meh]; 
+
 const buildVotingResult = (counter: number) =>
   new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
@@ -185,17 +194,17 @@ const buildVotingResult = (counter: number) =>
 const buildButtonRow = (counter: number) =>
   new ActionRowBuilder<ButtonBuilder>().addComponents([
     new ButtonBuilder()
-      .setCustomId('sentient')
+      .setCustomId(ButtonId.Sentient)
       .setEmoji('🐸')
       .setStyle(ButtonStyle.Success)
       .setLabel('sentient'),
     new ButtonBuilder()
-      .setCustomId('score')
+      .setCustomId(ButtonId.Score)
       .setDisabled(true)
       .setStyle(ButtonStyle.Secondary)
       .setLabel(formatNumber(counter)),
     new ButtonBuilder()
-      .setCustomId('meh')
+      .setCustomId(ButtonId.Meh)
       .setEmoji('👎')
       .setStyle(ButtonStyle.Danger)
       .setLabel('meh'),
@@ -220,6 +229,8 @@ const buildVotingCommand = (voter: PepeVoting) => {
 };
 
 export const EightPepe: InteractionPlugin & ButtonPlugin = {
+  name: "PepeGPT",
+  publishedButtonIds: InteractableButtonIds,
   descriptor: {
     name: 'pepegpt',
     description:
@@ -290,6 +301,7 @@ const buildPepeOfTheDayCommand = (store: PepeInterface, config: PepeConfig) => {
 };
 
 export const PepeThis: ContextMenuPlugin = {
+  name: "Pepe This!",
   descriptor: {
     name: 'Pepe this!',
     type: ApplicationCommandType.Message,
@@ -312,6 +324,7 @@ export const PepeThis: ContextMenuPlugin = {
 };
 
 export const PepeOfTheDay: InteractionPlugin = {
+  name: "PepeOfTheDay",
   descriptor: {
     name: 'potd',
     description: 'Pepe of the Day!',
@@ -357,6 +370,7 @@ const buildSearchCommand = (store: PepeInterface) => {
 };
 
 export const SearchPepe: InteractionPlugin & AutoCompletePlugin = {
+  name: "SearchPepe",
   descriptor: {
     name: 'pepe',
     description: 'Search the pepe library',

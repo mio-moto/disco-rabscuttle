@@ -169,6 +169,7 @@ const reactIntraday = async (
 };
 
 const plugin: InteractionPlugin & AutoCompletePlugin = {
+  name: "Stock",
   descriptor: {
     name: 'stock',
     description: 'Display intra-day information of stocks.',

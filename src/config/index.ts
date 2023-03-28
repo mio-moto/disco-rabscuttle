@@ -19,6 +19,7 @@ export interface Config {
   uploadConfig: UploadConfig;
   administrators: string[];
   databaseLocation: string;
+  plugins: any,
 }
 
 function loadConfig(path: string): Config {

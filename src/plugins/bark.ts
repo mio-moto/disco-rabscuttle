@@ -402,6 +402,7 @@ async function bark(interaction: ChatInputCommandInteraction) {
 }
 
 const plugin: InteractionPlugin = {
+  name: "Bark",
   descriptor: {
     name: 'bark',
     description: 'Randomized rudeness from a robot.',

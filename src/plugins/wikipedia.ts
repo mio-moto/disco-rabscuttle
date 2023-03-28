@@ -31,6 +31,7 @@ const buildEmbed = async (page: Page): Promise<EmbedBuilder> => {
 };
 
 const plugin: InteractionPlugin & AutoCompletePlugin = {
+  name: "Wikipedia",
   descriptor: {
     name: 'wiki',
     description: 'Search and find wikipedia pages.',

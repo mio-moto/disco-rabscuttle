@@ -90,6 +90,11 @@ export function register(plugin: PluginTypes) {
   }
 
   if (isButtonPlugin(plugin)) {
+    const idCollisions = plugin.publishedButtonIds.filter(id => plugins.buttons.some(x => x.publishedButtonIds.includes(id)));
+    for (const idCollision of idCollisions) {
+      const pluginCollisions = plugins.buttons.filter(plugin => plugin.publishedButtonIds.includes(idCollision));
+      logger.warn(`Button ID '${idCollision}' of [${plugin.name}] collides with these plugins publishing the same custom ID [${pluginCollisions.join(", ")}]`);
+    }
     plugins.buttons.push(plugin);
   }
 
@@ -142,9 +147,14 @@ export function onNewInteraction(interaction: Interaction) {
 
   // button interactions (when the bot sent out a bunch of buttons and they get clicked)
   if (interaction.isButton()) {
-    plugins.buttons.forEach(x =>
-      tryInvoke(() => x.onNewButtonClick(interaction))
-    );
+    plugins.buttons.forEach(x => {
+      // a button has *always* a custom id
+      // that's then being used to dispatch to the correct plugin
+      const id = interaction.customId;
+      if(x.publishedButtonIds.includes(id)) {
+        tryInvoke(() => x.onNewButtonClick(interaction))
+      }
+    });
     return;
   }
 

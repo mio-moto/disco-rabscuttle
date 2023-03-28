@@ -24,6 +24,7 @@ const deleteMessage = async (interaction: ContextMenuCommandInteraction) => {
 };
 
 const deleteMessageCommand: ContextMenuPlugin = {
+  name: "Admin Delete",
   descriptor: {
     name: 'Delete',
     type: ApplicationCommandType.Message,

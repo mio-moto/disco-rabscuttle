@@ -243,6 +243,7 @@ const findMatches = (coin: string) => {
 };
 
 const plugin: InteractionPlugin & AutoCompletePlugin = {
+  name: "Crypto",
   descriptor: {
     name: 'crypto',
     description: 'Show current crypto exchange rates.',

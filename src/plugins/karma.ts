@@ -106,6 +106,7 @@ const generateResponse = (command: ActionNames, username: string) => {
 const buildPlugin = (
   descriptor: ApplicationCommandData
 ): InteractionPlugin => ({
+  name: descriptor.name,
   descriptor: descriptor,
   onNewInteraction: async (interaction: ChatInputCommandInteraction) => {
     const username = interaction.options.getString('username');

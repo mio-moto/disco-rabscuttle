@@ -239,6 +239,7 @@ const onNewInteraction = async (interaction: ChatInputCommandInteraction) => {
 };
 
 const plugin: InteractionPlugin & AutoCompletePlugin & MessagePlugin = {
+  name: "Steam",
   descriptor: {
     name: 'steam',
     description: 'Searches the steam store and and displays relevant info',

@@ -56,6 +56,7 @@ interface Preload {
 }
 
 const plugin: InteractionPlugin & MessagePlugin & Preload = {
+  name: "Markov",
   descriptor: {
     name: 'markov',
     description: 'Let the ultimate wisdom of the god bot be bestowed upon you',

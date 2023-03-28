@@ -19,11 +19,19 @@ export default async function registerInteractions(
     client.guilds.cache.forEach(async y => {
       y.commands.create(x.descriptor);
     });
-    register(x);
-    if (x.onInit) {
-      const logger = loggerFactory(x.descriptor.name);
-      x.onInit(client, database, config, logger);
-    }
-    interactionLogger.info(`${x.descriptor.name} initialized`);
   });
+
+  const interactiveNames = interactivePlugins.map(x => x.descriptor.name).join(", ")
+  interactionLogger.info(`Registered these interactive commands against guilds: [${interactiveNames}]`);
+
+  interactions.forEach(x => {
+    register(x);
+    if(x.onInit) {
+      const logger = loggerFactory(x.name);
+      x.onInit(client,database, config, logger);
+    }
+  })
+
+  const pluginNames = interactions.map(x => x.name).join(", ");
+  interactionLogger.info(`Registered and inited these plugins: [${pluginNames}]`);
 }

@@ -387,6 +387,7 @@ let yesterdayPopularGames: string[];
 let currentPopularGames: string[];
 
 const plugin: InteractionPlugin = {
+  name: "Dota2 Players",
   descriptor: {
     name: 'dotaplayers',
     description: 'Show the current dota players for a custom game name',
