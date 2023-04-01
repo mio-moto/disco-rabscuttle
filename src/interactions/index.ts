@@ -2,16 +2,16 @@ import {Client} from 'discord.js';
 import {Config} from '../config';
 import {register} from './../message';
 import {loggerFactory} from '../logging';
-import {PromisedDatabase} from 'promised-sqlite3';
 import {InteractionPlugin, isInteractionPlugin, Plugin} from '../message/hooks';
+import { Kysely } from 'kysely';
 
 export default async function registerInteractions(
   client: Client,
   config: Config,
-  database: PromisedDatabase,
+  database: Kysely<any>,
   interactions: Plugin[]
 ) {
-  const interactionLogger = loggerFactory('Interactions');
+  const interactionLogger = loggerFactory('S:Interactions');
   const interactivePlugins = interactions.filter(x =>
     isInteractionPlugin(x)
   ) as InteractionPlugin[];
@@ -27,7 +27,7 @@ export default async function registerInteractions(
   interactions.forEach(x => {
     register(x);
     if(x.onInit) {
-      const logger = loggerFactory(x.name);
+      const logger = loggerFactory(`P:${x.name}`);
       x.onInit(client,database, config, logger);
     }
   })

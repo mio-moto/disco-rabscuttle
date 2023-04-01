@@ -32,8 +32,8 @@ import {
   embedUltra,
 } from './pepe-storage/embed-builders';
 import interactionError from './utils/interaction-error';
-import logger from '../logging';
-import {PromisedDatabase} from 'promised-sqlite3';
+import { Kysely } from 'kysely';
+import { Logger } from 'winston';
 
 /***
  * Configuration
@@ -48,7 +48,7 @@ const createOrRetrieveStore = (() => {
   return async (
     client: Client,
     config: PepeConfig,
-    db: PromisedDatabase
+    db: Kysely<any>
   ): Promise<PepeInterface> => {
     if (!initialized) {
       initialized = true;
@@ -106,6 +106,7 @@ const closeVotingSession = async (
  **/
 const buildEightPepeCommand = (
   client: Client,
+  logger: Logger,
   store: PepeInterface,
   icons: PepeIconData
 ) => {
@@ -252,7 +253,7 @@ export const EightPepe: InteractionPlugin & ButtonPlugin = {
     logger.info(
       `Total ${totalCount} pepes: [${store.normal.length}] normies, [${store.rare.length}] rares, [${store.ultra.length}] ultras`
     );
-    const command = buildEightPepeCommand(client, store, pepeConfig.icons);
+    const command = buildEightPepeCommand(client, logger, store, pepeConfig.icons);
     this.onNewInteraction = interaction =>
       command(interaction, interaction.options.getString('phrase', false));
     this.onNewButtonClick = buildVotingCommand(store);
@@ -309,7 +310,7 @@ export const PepeThis: ContextMenuPlugin = {
   onInit: async function (client, db, config, logger) {
     const pepeConfig = retrievePepeConfig(config).pepes;
     const store = await createOrRetrieveStore(client, pepeConfig, db);
-    const command = buildEightPepeCommand(client, store, pepeConfig.icons);
+    const command = buildEightPepeCommand(client, logger, store, pepeConfig.icons);
 
     this.onNewContextAction = async interaction => {
       if (!interaction.isMessageContextMenuCommand()) {

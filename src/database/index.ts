@@ -1,32 +1,21 @@
-import {PromisedDatabase} from 'promised-sqlite3';
+import { Kysely, SqliteDialect } from 'kysely';
+import Database from 'better-sqlite3';
 import {loggerFactory} from '../logging';
 
 export interface DatabaseConfig {
   location: string;
 }
 
-const listAllTables = `
-SELECT name
-FROM sqlite_master
-WHERE 
-    type ='table' AND 
-    name NOT LIKE 'sqlite_%'
-`;
-
 export const initializeDatabase = async (databaseLocation: string) => {
-  const logger = loggerFactory('db');
-  const db = new PromisedDatabase();
-  await db.open(databaseLocation);
+  const logger = loggerFactory('S:Database');
 
-  const tables: string[] = [];
-  await db.each(listAllTables, [], result => {
-    tables.push(result.name as string);
+  const db = new Kysely<any>({
+    dialect: new SqliteDialect({
+      database: new Database(databaseLocation)
+    })
   });
 
-  logger.info(
-    `Initialized database, got [${tables.length}] tables: ${JSON.stringify(
-      tables
-    )}`
-  );
+  const tables = await db.introspection.getTables();
+  logger.info(`Initialized tabase, got [${tables.length}] tables: [${tables.map(x => x.name).join(", ")}]`);
   return db;
 };

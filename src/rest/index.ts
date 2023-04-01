@@ -1,7 +1,7 @@
 import {REST, Routes} from 'discord.js';
 import {loggerFactory} from '../logging';
 
-const logger = loggerFactory('rest');
+const logger = loggerFactory('S:Rest API');
 
 interface Config {
   clientId: string;

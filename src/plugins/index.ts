@@ -10,6 +10,7 @@ import WikiSearch from './wikipedia';
 import {CommendInteraction, KarmaInteraction, ReportInteraction} from './karma';
 import DeleteMessage from './administration';
 import { TheButtonPlugin } from './the-button';
+import { ThreeCardMonte } from './games';
 
 export const interactions = [
   Bark,
@@ -28,5 +29,6 @@ export const interactions = [
   PepeThis,
   WikiSearch,
   DeleteMessage,
-  TheButtonPlugin
+  TheButtonPlugin,
+  ThreeCardMonte
 ];

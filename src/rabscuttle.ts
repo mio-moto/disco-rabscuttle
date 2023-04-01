@@ -13,7 +13,7 @@ import {
 } from './activity';
 
 export const buildRabscuttle = async (config: Config) => {
-  const logger = loggerFactory('Robot');
+  const logger = loggerFactory('S:Core');
   const database = await initializeDatabase(config.databaseLocation);
 
   const client = new Client({

@@ -12,7 +12,7 @@ import {
 export interface MessageCallback {
   (message: DiscordMessage): void;
 }
-const logger = loggerFactory('Plugins');
+const logger = loggerFactory('S:Plugins');
 
 const plugins: {
   interactions: {

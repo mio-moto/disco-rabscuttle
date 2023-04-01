@@ -6,7 +6,7 @@ import {
   ChatInputCommandInteraction,
   ContextMenuCommandInteraction,
 } from 'discord.js';
-import {PromisedDatabase} from 'promised-sqlite3';
+import { Kysely } from 'kysely';
 import {Logger} from 'winston';
 import {Config} from '../config';
 import {MessageCallback} from './message';
@@ -15,7 +15,7 @@ export type BasePlugin = {
   name: string,
   onInit?: (
     client: Client,
-    database: PromisedDatabase,
+    database: Kysely<any>,
     config: Config,
     logger: Logger
   ) => Promise<void>;

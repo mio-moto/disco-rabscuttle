@@ -1,4 +1,4 @@
-import {PromisedDatabase} from 'promised-sqlite3';
+import { Kysely } from 'kysely';
 import {buildDatabase} from './database';
 import {buildHasher} from './hasher';
 import {buildRandomizer} from './randomizer';
@@ -11,7 +11,7 @@ export * from './types';
 
 export const initializePepeInterface = async (
   config: PepeConfig,
-  db: PromisedDatabase,
+  db: Kysely<any>,
   options?: {ultraChance?: number; rareChance?: number}
 ): Promise<PepeInterface> => {
   const database = await buildDatabase(config);

@@ -25,8 +25,8 @@ const ButtonTable = "the_button";
 interface ButtonTableType {
     message: string,
     channel: string,
-    startTime: Date,
-    endTime: Date,
+    startTime: string,
+    endTime: string,
     claimTime?: string | Date,
     claimedBy?: string | Date
 }
@@ -80,8 +80,8 @@ const createButton = async (channelId: string, client: Client, db: Kysely<Databa
         .values({
             message: message.id,
             channel: channelId,
-            startTime: new Date(),
-            endTime: new Date((new Date().getTime() + (buttonProposal.maxDurationInSeconds * 1_000)))
+            startTime: new Date().toUTCString(),
+            endTime: new Date((new Date().getTime() + (buttonProposal.maxDurationInSeconds * 1_000))).toISOString()
         })
         .execute();
     return message;

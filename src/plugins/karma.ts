@@ -7,7 +7,7 @@ import {writeFile, readFile} from 'fs';
 import {InteractionPlugin} from '../message/hooks';
 import {loggerFactory} from '../logging';
 
-const logger = loggerFactory('karma');
+const logger = loggerFactory('P:Karma');
 export const TRIGGER_WORDS = ['karma', 'commend', 'report'] as const;
 export const [KARMA_COMMAND, COMMEND_COMMAND, REPORT_COMMAND] = TRIGGER_WORDS;
 
