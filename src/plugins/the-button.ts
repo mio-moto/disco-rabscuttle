@@ -1,8 +1,8 @@
 import { ButtonPlugin } from "../message/hooks";
-import { PromisedDatabase } from "promised-sqlite3";
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Client } from "discord.js";
 import { waitFor } from "./utils/wait-until";
 import { Logger } from "winston";
+import { Kysely } from "kysely";
 
 type ButtonEvent = {
     message?: string,
@@ -21,25 +21,39 @@ interface PluginConfig {
 
 const ButtonTable = "the_button";
 
-const bootstrapDatabase = async (db: PromisedDatabase) => {
-    db.createTable(
-        ButtonTable,
-        true,
-        "message TEXT NOT NULL PRIMARY KEY",
-        "channel TEXT NOT NULL",
-        "startTime TEXT NOT NULL",
-        "endTime TEXT NOT NULL",
-        "claimTime TEXT",
-        "claimedBy TEXT",
 
-    )
+interface ButtonTableType {
+    message: string,
+    channel: string,
+    startTime: Date,
+    endTime: Date,
+    claimTime?: string | Date,
+    claimedBy?: string | Date
+}
+
+interface Database {
+    [ButtonTable]: ButtonTableType
+}
+
+
+const bootstrapDatabase = async (db: Kysely<any>): Promise<Kysely<Database>> => {
+    await db.schema
+        .createTable(ButtonTable).ifNotExists()
+        .addColumn("message", "text", x => x.notNull().primaryKey())
+        .addColumn("channel", "text", x => x.notNull())
+        .addColumn("startTime", "text", x => x.notNull())
+        .addColumn("endTime", "text", x => x.notNull())
+        .addColumn("claimTime", "text")
+        .addColumn("claimedBy", "text")
+        .execute();
+    return <Kysely<Database>> db;
 }
 
 const random = <T>(stuff: T[]): T =>
     stuff[Math.floor(Math.random() * stuff.length)];
 
 
-const postButton = async (channelId: string, client: Client, db: PromisedDatabase, buttonProposal: ButtonEvent) => {
+const postButton = async (channelId: string, client: Client, db: Kysely<Database>, buttonProposal: ButtonEvent) => {
     const channel = await client.channels.fetch(channelId);
     if (!channel?.isTextBased()) {
         return;
@@ -55,46 +69,62 @@ const postButton = async (channelId: string, client: Client, db: PromisedDatabas
     return await channel.send({ content: buttonProposal.message, components: [new ActionRowBuilder<ButtonBuilder>().addComponents(button)] });
 }
 
-const createButton = async (channelId: string, client: Client, db: PromisedDatabase, buttonProposal: ButtonEvent) => {
+const createButton = async (channelId: string, client: Client, db: Kysely<Database>, buttonProposal: ButtonEvent) => {
     const message = await postButton(channelId, client, db, buttonProposal);
     if (!message) {
         return;
     }
 
-    await db.run(`
-        INSERT INTO ${ButtonTable} (message, channel, startTime, endTime)
-        VALUES (?, ?, CURRENT_TIMESTAMP, DATETIME('now', '+${buttonProposal.maxDurationInSeconds} seconds'))
-    `, message.id, channelId);
+    await db
+        .insertInto(ButtonTable)
+        .values({
+            message: message.id,
+            channel: channelId,
+            startTime: new Date(),
+            endTime: new Date((new Date().getTime() + (buttonProposal.maxDurationInSeconds * 1_000)))
+        })
+        .execute();
     return message;
 }
 
-const claimButton = async (interaction: ButtonInteraction, db: PromisedDatabase, logger: Logger) => {
+const claimButton = async (interaction: ButtonInteraction, db: Kysely<Database>, logger: Logger) => {
     interaction.update({});
     const userId = interaction.user.id;
     const messageId = interaction.message.id;
     logger.info(`A button got claimed by ${interaction.user.username}`)
 
-    await db.run(`
-        UPDATE ${ButtonTable}
-        SET claimTime = DATETIME('now'),
-            claimedBy = ?
-        WHERE message = ?
-    `, userId, messageId);
+    await db
+        .updateTable(ButtonTable)
+        .set({
+            claimTime: new Date(),
+            claimedBy: userId
+        })
+        .where("message", "=", messageId)
+        .execute();
+
     await interaction.message.delete();
 }
 
-const revokeButton = async (messageId: string, db: PromisedDatabase, client: Client) => {
-    const result = (await db.get(`SELECT claimTime, channel, message FROM ${ButtonTable} WHERE message = ?`, messageId)) as { claimTime?: string, channel: string, message: string };
+const revokeButton = async (messageId: string, db: Kysely<Database>, client: Client) => {
+    const result = (await db
+        .selectFrom(ButtonTable)
+        .select(["claimTime", "channel", "message"])
+        .where("message", "=", messageId)
+        .executeTakeFirstOrThrow()
+    );
+
     if (result.claimTime) {
         return;
     }
 
-    await db.run(`
-        UPDATE ${ButtonTable}
-        SET claimTime = ?,
-            claimedBy = ?
-        WHERE message = ? 
-    `, '[never claimed]', '[nobody]', messageId);
+    await db
+        .updateTable(ButtonTable)
+        .set({
+            claimTime: '[never claimed]',
+            claimedBy: '[nobody]'
+        })
+        .where("message", "=", messageId)
+        .execute();
 
     const channel = (await client.channels.fetch(result.channel));
     if (!channel || !channel.isTextBased()) {
@@ -108,7 +138,7 @@ const revokeButton = async (messageId: string, db: PromisedDatabase, client: Cli
 }
 
 
-const buttonLogic = async (targetChannel: string, client: Client, db: PromisedDatabase, buttonProposals: ButtonEvent[]) => {
+const buttonLogic = async (targetChannel: string, client: Client, db: Kysely<Database>, buttonProposals: ButtonEvent[]) => {
     const buttonProposal = random(buttonProposals);
     const maxDuration = buttonProposal.maxDurationInSeconds
 
