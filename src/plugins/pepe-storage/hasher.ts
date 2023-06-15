@@ -12,6 +12,9 @@ import {
   NormalUrl,
 } from './types';
 
+
+import { randomInt } from 'crypto';
+
 const hash = (text: string) => hash32String(text, 0xf3375_600d);
 
 const hashEntry = <T>(pepes: T[]) => {
@@ -72,7 +75,7 @@ export const buildHasher = (
 
     // generate the same pepe based on the day
     pepeOfTheDay: (): GachaHit & {date: Date; dateText: string} => {
-      const value = Math.random();
+      const value = randomInt(0, 281474976710655);
       const [today, textToday] = todayAsText();
 
       if (probabilityHit(value, 31)) {
@@ -99,7 +102,7 @@ export const buildHasher = (
     },
     // hit the lever - hashes a normal pepe unless a lucky hit triggers a higher rarity
     gachaPepe: function (text?: string | null): GachaHit {
-      const value = Math.random();
+      const value = randomInt(0, 281474976710655) / 281474976710655;
       if (probabilityHit(value, ultraChance)) {
         return buildHit(Rarity.ultra, randomizer.randomUltra());
       }
