@@ -3,6 +3,10 @@ import {loggerFactory} from './logging';
 import {interactions} from './plugins';
 import {buildRabscuttle} from './rabscuttle';
 
+// (making it really obvious where the process restarted, sometimes hard to find)
+loggerFactory(">>>>>>").info("Rabscuttle started");
+
+
 (async () => {
   const config = loadConfig();
   const rabs = await buildRabscuttle(config);
@@ -12,7 +16,7 @@ import {buildRabscuttle} from './rabscuttle';
 
 
 // yea, blame discord.js throwing random errors at places that are not reachable from here
-const logger = loggerFactory("S:Runtime")
+const logger = loggerFactory("S:Runtime");
 process.on('unhandledRejection', (error: Error) => {
   logger.error('Unhandled promise rejection:', error);
   if (error.stack) {

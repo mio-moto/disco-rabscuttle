@@ -8,7 +8,7 @@ import {
   ButtonStyle,
   ChatInputCommandInteraction,
   Client,
-  CommandInteraction,
+  CommandInteraction
 } from 'discord.js';
 import {
   AutoCompletePlugin,
@@ -175,12 +175,17 @@ const formatNumber = (counter: number) => {
 
 enum ButtonId {
   Sentient = "sentient",
-  Meh = "meh",
+  Horrible = "horrible",
   Score = "score",
 }
 
-const ButtonIds = [ButtonId.Sentient, ButtonId.Meh, ButtonId.Score];
-const InteractableButtonIds = [ButtonId.Sentient, ButtonId.Meh]; 
+const ButtonIds = [ButtonId.Sentient, ButtonId.Score];
+const InteractableButtonIds = [ButtonId.Sentient, ButtonId.Score, ButtonId.Horrible]; 
+const VoteWeight: Record<ButtonId, number> = {
+  [ButtonId.Sentient]: 1,
+  [ButtonId.Score]: 0,
+  [ButtonId.Horrible]: -1
+}
 
 const buildVotingResult = (counter: number) =>
   new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -196,19 +201,16 @@ const buildButtonRow = (counter: number) =>
   new ActionRowBuilder<ButtonBuilder>().addComponents([
     new ButtonBuilder()
       .setCustomId(ButtonId.Sentient)
-      .setEmoji('🐸')
       .setStyle(ButtonStyle.Success)
-      .setLabel('sentient'),
+      .setLabel('🐸'),
     new ButtonBuilder()
       .setCustomId(ButtonId.Score)
-      .setDisabled(true)
       .setStyle(ButtonStyle.Secondary)
       .setLabel(formatNumber(counter)),
     new ButtonBuilder()
-      .setCustomId(ButtonId.Meh)
-      .setEmoji('👎')
+      .setCustomId(ButtonId.Horrible)
       .setStyle(ButtonStyle.Danger)
-      .setLabel('meh'),
+      .setLabel('💀')
   ]);
 
 const buildVotingCommand = (voter: PepeVoting) => {
@@ -218,16 +220,36 @@ const buildVotingCommand = (voter: PepeVoting) => {
       await interaction.update({});
       return;
     }
-    const id = interaction.customId as 'meh' | 'sentient';
-    const delta = id == 'sentient' ? +1 : -1;
+    const id = interaction.customId as ButtonId;
+    const weight = VoteWeight[id];
     const value = await voter.submitVote(
       interaction.message.id,
       interaction.user.id,
-      delta
+      weight
     );
     await interaction.update({components: [buildButtonRow(value)]});
   };
 };
+
+const updateAllVotingComponents = async (client: Client, voter: PepeVoting) => {
+  const messages = await voter.getVotingsOlderThan(0);
+  const channels = new Set([...messages.map(x => x.channel)]);
+  for(const channel in channels) {
+    await client.channels.fetch(channel);
+  }
+
+  for (const message of messages) {
+    const channel = client.channels.cache.find(x => x.id === message.channel);
+    if(!channel || !channel.isTextBased()) {
+      continue;
+    }
+  
+    const discordMessage = await channel.messages.fetch(message.message);
+    const score = await voter.getVotingResult(message.message);
+
+    discordMessage.edit({ components: [buildButtonRow(score ?? 0) ]});
+  }
+}
 
 export const EightPepe: InteractionPlugin & ButtonPlugin = {
   name: "PepeGPT",
@@ -257,6 +279,7 @@ export const EightPepe: InteractionPlugin & ButtonPlugin = {
     this.onNewInteraction = interaction =>
       command(interaction, interaction.options.getString('phrase', false));
     this.onNewButtonClick = buildVotingCommand(store);
+    await updateAllVotingComponents(client, store);
   },
   onNewInteraction: alwaysExcepts,
   onNewButtonClick: alwaysExcepts,

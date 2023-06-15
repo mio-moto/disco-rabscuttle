@@ -1,5 +1,6 @@
 import {
   ApplicationCommandType,
+  Client,
   ContextMenuCommandInteraction,
 } from 'discord.js';
 import {ContextMenuPlugin} from '../message/hooks';
@@ -22,6 +23,14 @@ const deleteMessage = async (interaction: ContextMenuCommandInteraction) => {
   await interaction.targetMessage.delete();
   await interaction.reply({ephemeral: true, content: 'Message deleted.'});
 };
+
+const fetchDelete = async (client: Client, server: string, channel: string, message: string) => {
+  var targetChannel = (await (await client.guilds.fetch(server)).channels.fetch(channel))
+    if(targetChannel?.isTextBased()) {
+      (await targetChannel.messages.fetch(message)).delete();
+    }
+}
+
 
 const deleteMessageCommand: ContextMenuPlugin = {
   name: "Admin Delete",

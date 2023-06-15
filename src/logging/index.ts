@@ -2,23 +2,10 @@ import {createLogger, format, transports} from 'winston';
 const { printf } = format;
 
 
-
-/*
-{
-  error: 0,
-  warn: 1,
-  info: 2,
-  http: 3,
-  verbose: 4,
-  debug: 5,
-  silly: 6
-}
-*/
-
-
 const levelToString = (level: string): string => {
   const lowerLevel = level.toLowerCase().trim();
 
+  // these are the default levels that winston provides
   switch (lowerLevel) {
     case "error":
       return "err "

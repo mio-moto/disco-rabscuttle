@@ -11,6 +11,7 @@ import {CommendInteraction, KarmaInteraction, ReportInteraction} from './karma';
 import DeleteMessage from './administration';
 import { TheButtonPlugin } from './the-button';
 import { ThreeCardMonte } from './games';
+import RedditProtest from "./reddit-protest";
 
 export const interactions = [
   Bark,
@@ -30,5 +31,6 @@ export const interactions = [
   WikiSearch,
   DeleteMessage,
   TheButtonPlugin,
-  ThreeCardMonte
+  ThreeCardMonte,
+  RedditProtest,
 ];

@@ -27,8 +27,8 @@ interface ButtonTableType {
     channel: string,
     startTime: string,
     endTime: string,
-    claimTime?: string | Date,
-    claimedBy?: string | Date
+    claimTime?: string,
+    claimedBy?: string
 }
 
 interface Database {
@@ -96,7 +96,7 @@ const claimButton = async (interaction: ButtonInteraction, db: Kysely<Database>,
     await db
         .updateTable(ButtonTable)
         .set({
-            claimTime: new Date(),
+            claimTime: new Date().toISOString(),
             claimedBy: userId
         })
         .where("message", "=", messageId)
