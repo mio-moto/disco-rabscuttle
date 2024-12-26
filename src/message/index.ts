@@ -3,4 +3,4 @@ export {
   onNewMessage,
   onNewInteraction,
   buildEventBus,
-} from './message';
+} from './message'

@@ -1,4 +1,4 @@
-import {UltraId, UltraRare} from '.';
+import type { UltraId, UltraRare } from '.'
 
 /**
  * for comparisons, generate an ID from an ultras number and name
@@ -7,5 +7,4 @@ import {UltraId, UltraRare} from '.';
  * @param pepe
  * @returns `${pepe.number} - ${pepe.name}`
  */
-export const ultraId = (pepe: UltraRare): UltraId =>
-  `[${pepe.number}] ${pepe.name}`;
+export const ultraId = (pepe: UltraRare): UltraId => `[${pepe.number}] ${pepe.name}`

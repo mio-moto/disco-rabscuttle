@@ -1,4 +1,4 @@
-import {OHLCDataPoint, ohlcMax, ohlcMin, rasterize} from './rasterizer';
-import {uploadImage} from './uploader';
+import { ohlcMax, ohlcMin, rasterize } from './rasterizer'
+import { uploadImage } from './uploader'
 
-export {OHLCDataPoint, rasterize, uploadImage, ohlcMin, ohlcMax};
+export { rasterize, uploadImage, ohlcMin, ohlcMax }

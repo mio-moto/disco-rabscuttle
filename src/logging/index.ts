@@ -1,78 +1,65 @@
-import {createLogger, format, transports} from 'winston';
-const { printf } = format;
-
+import { createLogger, format, transports } from 'winston'
+const { printf } = format
 
 const levelToString = (level: string): string => {
-  const lowerLevel = level.toLowerCase().trim();
+  const lowerLevel = level.toLowerCase().trim()
 
   // these are the default levels that winston provides
   switch (lowerLevel) {
-    case "error":
-      return "err "
-    case "warn":
-      return "warn"
-    case "info":
-      return "info"
-    case "http":
-      return "http"
-    case "verbose":
-      return "vrbs"
-    case "debug":
-      return "debg"
-    case "silly":
-      return "sill"
+    case 'error':
+      return 'err '
+    case 'warn':
+      return 'warn'
+    case 'info':
+      return 'info'
+    case 'http':
+      return 'http'
+    case 'verbose':
+      return 'vrbs'
+    case 'debug':
+      return 'debg'
+    case 'silly':
+      return 'sill'
     default:
-      return lowerLevel.substring(0, 3);
+      return lowerLevel.substring(0, 3)
   }
 }
 
-
 const messageFormat = printf(({ level, message, label }) => {
-  const abbreviation = levelToString(level);
-  return `[${label.padEnd(6)}:${abbreviation}] ${message}`;
-});
+  const abbreviation = levelToString(level)
+  return `[${label.padEnd(6)}:${abbreviation}] ${message}`
+})
 
-const fileFormat = printf(({ level, message, label, timestamp}) => {
-  const dateObject = new Date(timestamp);
-  const time = dateObject.toTimeString().split(' ')[0];
-  const date = dateObject.toJSON().slice(0,10).split('-').reverse().join('/') 
-  return `${date} ${time} - ${level.toUpperCase()} - [${label}] ${message}`;
+const fileFormat = printf(({ level, message, label, timestamp }) => {
+  const dateObject = new Date(timestamp)
+  const time = dateObject.toTimeString().split(' ')[0]
+  const date = dateObject.toJSON().slice(0, 10).split('-').reverse().join('/')
+  return `${date} ${time} - ${level.toUpperCase()} - [${label}] ${message}`
 })
 
 /**
- * 
+ *
  * @param prefix should be of length 6 or less
- * @returns 
+ * @returns
  */
 export const loggerFactory = (prefix: string) =>
   createLogger({
     level: 'info',
-    format: format.combine(
-      format.errors({stack: true}),
-      format.splat(),
-      format.json()
-    ),
-    defaultMeta: {service: prefix},
+    format: format.combine(format.errors({ stack: true }), format.splat(), format.json()),
+    defaultMeta: { service: prefix },
     transports: [
       new transports.Console({
-        format: format.combine(
-          format.label({ label: prefix}),
-          messageFormat
-        ),
+        format: format.combine(format.label({ label: prefix }), messageFormat),
       }),
       new transports.File({
-        level: "silly",
-        filename: "data/logs/rolling.log",
+        level: 'silly',
+        filename: 'data/logs/rolling.log',
         maxsize: 1024 * 128,
         maxFiles: 100,
         tailable: true,
-        format: format.combine(
-          format.timestamp(),
-          format.label({ label: prefix }),
-          fileFormat
-        )
-      })
+        format: format.combine(format.timestamp(), format.label({ label: prefix }), fileFormat),
+      }),
     ],
-  });
-const logger = loggerFactory('!Default');
-export default logger;
+  })
+const logger = loggerFactory('!Default')
+export default logger

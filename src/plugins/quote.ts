@@ -1,159 +1,171 @@
-import {
-  AutocompleteInteraction,
-  ChatInputCommandInteraction,
-  ApplicationCommandOptionType,
-} from 'discord.js';
-import {readFile, writeFile} from 'fs';
-import {AutoCompletePlugin, InteractionPlugin} from '../message/hooks';
-import {Logger} from 'winston';
-import {shuffle} from './pepe-storage/randomizer';
+import { readFile, writeFile } from 'node:fs'
+import { ApplicationCommandOptionType, type AutocompleteInteraction, type ChatInputCommandInteraction, EmbedBuilder } from 'discord.js'
+import { marked } from 'marked'
+import type { Logger } from 'winston'
+import type { AutoCompletePlugin, InteractionPlugin } from '../message/hooks'
+import { createOrRetrieveStore, retrievePepeConfig } from './8pepe'
+import { type PepeInterface, Rarity } from './pepe-storage'
+import { shuffle } from './pepe-storage/randomizer'
 
-let logger: Logger;
+let logger: Logger
 
 interface Quote {
-  0: number;
-  1: string;
-  2: string;
-  3: number;
+  0: number
+  1: string
+  2: string
+  3: number
 }
 
-type Records = Array<Quote>;
+type Records = Array<Quote>
 
-const quotes: Records = [[1, '2', '3', 4]];
+const stubError = () => {
+  throw new Error('Stub, not an implementation')
+}
+let pepeInterface: PepeInterface = {
+  [Rarity.ultra]: [],
+  [Rarity.normal]: [],
+  [Rarity.rare]: [],
+  hashNormal: stubError,
+  hashRare: stubError,
+  hashUltra: stubError,
+  randomNormal: stubError,
+  randomRare: stubError,
+  randomUltra: stubError,
+  doesExist: stubError,
+  hash: stubError,
+  pepeOfTheDay: stubError,
+  gachaPepe: stubError,
+  proposeOwner: stubError,
+  getPepepOfTheDay: stubError,
+  setPepeOfTheDay: stubError,
+  suggestPepeName: stubError,
+  findPepeByName: stubError,
+  submitVote: stubError,
+  submitPhrase: stubError,
+  getVotingResult: stubError,
+  getAllVotings: stubError,
+  getImage: stubError,
+  getVotingsOlderThan: stubError,
+  beginVoting: stubError,
+  closeVoting: stubError,
+}
 
-const months = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-] as const;
+const quotes: Records = [[1, '2', '3', 4]]
+
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
 
 const load = () => {
   readFile('./data/quotes.json', (err, data) => {
     if (err) {
-      logger.error("Could not populate 'data/quote.json'");
-      return;
+      logger.error("Could not populate 'data/quote.json'")
+      return
     }
 
-    quotes.push(...(JSON.parse(data.toString()) as Records));
-    logger.info(`Populated quote dataset (${quotes.length} entries).`);
-  });
-};
+    quotes.push(...(JSON.parse(data.toString()) as Records))
+    logger.info(`Populated quote dataset (${quotes.length} entries).`)
+  })
+}
 
 const randomInt = (max: number): number => {
-  return Math.floor(Math.random() * Math.floor(max));
-};
+  return Math.floor(Math.random() * Math.floor(max))
+}
 
-const timeFormatter = (unixTimestamp: number): string => {
-  const time = new Date(unixTimestamp * 1000);
-  const year = time.getFullYear();
-  const month = months[time.getMonth()];
-  const date = time.getDate();
-  return `${date} ${month} ${year}`;
-};
-
-const formatQuote = (quote: Quote, extraInfo: boolean): string => {
-  const metaData = extraInfo
-    ? `\n _submitted by **${quote[2]}** on ${timeFormatter(quote[3])}`
-    : '';
-  return `${quote[0]}:\n> ${quote[1].split('||').join('\n> ')}${metaData}`;
-};
-
+const embedQuote = async (quote: Quote) =>
+  new EmbedBuilder()
+    .setDescription(quote[1])
+    .setFooter({ text: `Quote #${quote[0]} — submitted by ${quote[2]}` })
+    .setImage((await pepeInterface.hashNormal(quote[1])).value)
+    .setTimestamp(quote[3] * 1000)
+    .setColor('Aqua')
 const getUsercount = (): number => {
-  const users = new Set();
-  quotes.forEach(x => users.add(x));
-  return users.size;
-};
+  const users = new Set()
+  for (const quote of quotes) {
+    users.add(quote)
+  }
+  return users.size
+}
 
 const getAutoCompleteEntry = (quote: Quote) => {
-  const indexName = `[${quote[0]}] `;
-  const quoteText = quote[1].slice(0, 100 - indexName.length);
+  const indexName = `[${quote[0]}] `
+  const tokens = marked.lexer(quote[1], { breaks: true, gfm: true })
+  const quoteText = tokens
+    .map((x) => ('text' in x ? x.text : undefined))
+    .filter((x) => !!x)
+    .join(' ')
+    .replace(/\*\*/gm, '')
+    .slice(0, 100 - indexName.length)
   return {
     value: quote[0],
     name: `${indexName}${quoteText}`,
-  };
-};
+  }
+}
 
 const getAutoCompleteEntryString = (quote: Quote) => {
-  const entry = getAutoCompleteEntry(quote);
-  return {...entry, value: `${entry.value}`};
-};
+  const entry = getAutoCompleteEntry(quote)
+  return { ...entry, value: `${entry.value}` }
+}
 
 const runtime = {
-  pickRandomQuote: (extras: boolean) =>
-    formatQuote(quotes[randomInt(quotes.length)], extras),
-  getQuote: (index: number, extras: boolean) => {
-    const quote = quotes.find(x => x[0] == index);
-    if (quote == null) {
-      return `The quote with the index [${index}] does not seem to exist`;
-    }
-    return formatQuote(quote, extras);
+  pickRandomQuote: () => {
+    return embedQuote(quotes[randomInt(quotes.length)])
   },
-  statusReport: () =>
-    `There are ${
-      quotes.length
-    } quotes from ${getUsercount()} shitposters. You're welcome.`,
+  getQuote: async (index: number) => {
+    const quote = quotes.find((x) => x[0] === index)
+    if (quote == null) {
+      return new EmbedBuilder().setColor('Red').setTitle(`The quote with the index [${index}] does not seem to exist`)
+    }
+    return await embedQuote(quote)
+  },
+  statusReport: () => `There are ${quotes.length} quotes from ${getUsercount()} shitposters. You're welcome.`,
   addQuote: (interaction: ChatInputCommandInteraction): string => {
     // quote: string, author: string
-    const quote = interaction.options.getString('quote', true);
-    const author = interaction.member?.user.username ?? 'unknown';
-    const newQuoteIndex = quotes[quotes.length - 1][0] + 1;
-    const newQuote: Quote = [
-      newQuoteIndex,
-      quote,
-      author,
-      new Date().getTime() / 1000,
-    ];
-    quotes.push(newQuote);
-    writeFile('./data/quotes.json', JSON.stringify(quotes), err => {
+    const quote = interaction.options.getString('quote', true)
+    const author = interaction.member?.user.username ?? 'unknown'
+    const newQuoteIndex = quotes[quotes.length - 1][0] + 1
+    const newQuote: Quote = [newQuoteIndex, quote, author, new Date().getTime() / 1000]
+    quotes.push(newQuote)
+    writeFile('./data/quotes.json', JSON.stringify(quotes), (err) => {
       if (err) {
-        logger.error(`Could not write 'data/quotes.json':\n${err}`);
+        logger.error(`Could not write 'data/quotes.json':\n${err}`)
       }
-    });
-    return `${author}s quote has been added, its index is ${newQuoteIndex + 1}`;
+    })
+    return `${author}s quote has been added, its index is ${newQuoteIndex + 1}`
   },
   searchQuote: (query: string) => {
     if (query === '') {
-      return shuffle(quotes).slice(0, 25).map(getAutoCompleteEntryString);
+      return shuffle(quotes).slice(0, 25).map(getAutoCompleteEntryString)
     }
     return quotes
-      .filter(x =>
+      .filter((x) =>
         query
           .toLowerCase()
           .split(' ')
-          .every(y => x[1].toLowerCase().includes(y))
+          .every((y) => x[1].toLowerCase().includes(y)),
       )
       .slice(0, 25)
-      .map(getAutoCompleteEntryString);
+      .map(getAutoCompleteEntryString)
   },
   searchIndex: (index: number) => {
-    if (index == 0) {
+    if (index === 0) {
       return shuffle(quotes)
         .slice(0, 25)
         .sort((a, b) => a[0] - b[0])
-        .map(getAutoCompleteEntry);
+        .map(getAutoCompleteEntry)
     }
-    const stringIndex = `${index}`;
+    const stringIndex = `${index}`
     return quotes
       .map((x: Quote): [string, number] => [`${x[0]}`, x[0]])
-      .filter(x => x[0].startsWith(stringIndex))
-      .map(x => quotes.find(y => y[0] === x[1])!)
+      .filter((x) => x[0].startsWith(stringIndex))
+      .map((x) => quotes.find((y) => y[0] === x[1]))
+      .filter((x) => !!x)
       .sort((a, b) => a[0] - b[0])
       .slice(0, 25)
-      .map(getAutoCompleteEntry);
+      .map(getAutoCompleteEntry)
   },
-} as const;
+} as const
 
 const plugin: InteractionPlugin & AutoCompletePlugin = {
-  name: "Quote",
+  name: 'Quote',
   descriptor: {
     name: 'quote',
     description: 'Sending and storing quotes',
@@ -212,48 +224,39 @@ const plugin: InteractionPlugin & AutoCompletePlugin = {
     ],
   },
 
-  onInit: async (_, __, ___, log) => {
-    logger = log;
-    load();
+  onInit: async (client, db, config, log) => {
+    logger = log
+    const pepeConfig = retrievePepeConfig(config).pepes
+    pepeInterface = await createOrRetrieveStore(client, pepeConfig, db)
+    load()
   },
   onNewInteraction: async (interaction: ChatInputCommandInteraction) => {
-    const subCommand = interaction.options.getSubcommand() as
-      | 'random'
-      | 'status'
-      | 'add'
-      | 'search'
-      | 'index';
-    let index: number;
+    const subCommand = interaction.options.getSubcommand() as 'random' | 'status' | 'add' | 'search' | 'index'
+    let index: number
     switch (subCommand) {
       case 'random':
-        return await interaction.reply(runtime.pickRandomQuote(false));
+        return await interaction.reply({ embeds: [await runtime.pickRandomQuote()] })
       case 'status':
-        return await interaction.reply(runtime.statusReport());
+        return await interaction.reply(runtime.statusReport())
       case 'add':
-        return await interaction.reply(runtime.addQuote(interaction));
+        return await interaction.reply(runtime.addQuote(interaction))
       case 'search':
-        index = parseInt(interaction.options.getString('query', true));
-        return await interaction.reply(runtime.getQuote(index, false));
+        index = Number.parseInt(interaction.options.getString('query', true))
+        return await interaction.reply({ embeds: [await runtime.getQuote(index)] })
       case 'index':
-        index = interaction.options.getNumber('index', true);
-        return await interaction.reply(runtime.getQuote(index, false));
+        index = interaction.options.getNumber('index', true)
+        return await interaction.reply({ embeds: [await runtime.getQuote(index)] })
     }
   },
   onAutoComplete: async (interaction: AutocompleteInteraction) => {
-    const subcommand = interaction.options.getSubcommand() as
-      | 'search'
-      | 'index';
+    const subcommand = interaction.options.getSubcommand() as 'search' | 'index'
     switch (subcommand) {
       case 'search':
-        return await interaction.respond(
-          runtime.searchQuote(interaction.options.getString('query', true))
-        );
+        return await interaction.respond(runtime.searchQuote(interaction.options.getString('query', true)))
       case 'index':
-        return await interaction.respond(
-          runtime.searchIndex(interaction.options.getNumber('index', true))
-        );
+        return await interaction.respond(runtime.searchIndex(interaction.options.getNumber('index', true)))
     }
   },
-};
+}
 
-export default plugin;
+export default plugin

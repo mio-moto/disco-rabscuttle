@@ -8,39 +8,20 @@
     "@types/form-data": "^2.5.0",
     "@types/formdata": "^0.10.0",
     "@types/jimp": "^0.2.28",
-    "@types/node": "^18.11.18",
-    "@types/node-fetch": "^2.5.10",
+    "@types/marked": "5.0.0",
+    "@types/bun": "latest",
     "@types/ws": "^7.4.4",
     "gts": "^3.1.0",
-    "nodemon": "^2.0.2",
     "prettier": "^2.0.2",
     "pretty-quick": "^2.0.1",
-    "ts-node": "^10.0.0",
     "tslint": "^6.1.0",
     "tslint-config-prettier": "^1.18.0",
-    "typescript": "^4.6.3"
-  },
-  "nodemonConfig": {
-    "legacyWatch": true,
-    "exec": "ts-node src/index.ts",
-    "env": {
-      "NODE_ENV": "development"
-    },
-    "ext": "ts",
-    "watch": [
-      "src"
-    ]
+    "typescript": "^4.6.3",
+    "@biomejs/biome": "1.9.4"
   },
   "scripts": {
-    "develop": "nodemon --max-old-space-size=4096",
-    "build": "tsc",
-    "lint": "gts lint",
-    "clean": "gts clean",
-    "compile": "tsc",
-    "fix": "gts fix",
-    "prepare": "npm run compile",
-    "pretest": "npm run compile",
-    "posttest": "npm run lint"
+    "develop": "bun ./src/index.ts",
+    "build": "bun build ./src/index.tsx --outdir ./build"
   },
   "author": "",
   "license": "MIT",
@@ -50,15 +31,18 @@
     "bufferutil": "^4.0.6",
     "develop": "^1.0.0",
     "discord-api-types": "^0.23.1",
-    "discord.js": "^14.8.0",
-    "erlpack": "github:discord/erlpack",
+    "discord.js": "14.16.3",
     "form-data": "^3.0.1",
     "jimp": "^0.16.1",
     "jsmegahal": "^1.2.4",
-    "kysely": "^0.23.5",
-    "node-fetch": "^2.6.7",
+    "kysely": "0.27.5",
+    "kysely-bun-worker": "0.7.0",
+    "marked": "5.0.0",
     "npm": "^9.2.0",
+    "pngjs": "7.0.0",
+    "receiptline": "^1.16.1",
     "run": "^1.4.0",
+    "sharp": "0.33.5",
     "utf-8-validate": "^5.0.9",
     "wikipedia": "^1.1.9",
     "winston": "^3.3.3",

@@ -1,9 +1,9 @@
-import {Logger} from 'winston';
+import type { Logger } from 'winston'
 
 export const tryInvoke = (action: () => void, logger?: Logger) => {
   try {
-    action();
+    action()
   } catch (e) {
-    logger?.error(e);
+    logger?.error(e)
   }
-};
+}
